@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para Ti - Recuerdo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Courier Prime', monospace; }
+        .pixel-border {
+            box-shadow: 
+                0 4px 0 -2px #2F2650, 0 -4px 0 -2px #2F2650, 
+                4px 0 0 -2px #2F2650, -4px 0 0 -2px #2F2650,
+                0 0 0 2px #2F2650;
+        }
+        .pixel-shadow { box-shadow: 8px 8px 0px 0px rgba(52, 58, 114, 0.4); }
+        .pixel-btn-shadow { box-shadow: 4px 4px 0px 0px #2F2650; }
+        .pixel-btn-shadow:active { box-shadow: 0px 0px 0px 0px #2F2650; transform: translate(4px, 4px); }
+        .step-content { display: none; }
+        .step-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-[#2F2650] min-h-screen flex items-center justify-center p-4 overflow-x-hidden">
+
+    <!-- Fondo Decorativo -->
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#DF2956] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#C1D3AC] rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+
+    <main class="w-full max-w-md z-10">
+        
+        <!-- PÁGINA 1: TEASER -->
+        <div id="step-1" class="step-content active animate-in fade-in duration-700">
+            <!-- Imagen Estilo Pixel -->
+            <div class="bg-[#2F2650] p-2 pixel-border mb-6">
+                <div class="bg-[#1B5676] aspect-video relative overflow-hidden flex items-center justify-center">
+                    <!-- Imagen de reemplazo que sí carga -->
+                    <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop" 
+                         class="w-full h-full object-cover opacity-50 mix-blend-overlay" alt="Bosque">
+                    <div class="absolute text-[#DF2956] text-4xl animate-pulse">❤</div>
+                </div>
+            </div>
+
+            <!-- Carta -->
+            <div class="bg-[#C1D3AC] p-8 border-[6px] border-[#2F2650] pixel-shadow text-center">
+                <h1 class="text-xl font-bold text-[#2F2650] uppercase leading-none mb-2">PARA TI</h1>
+                <h2 class="text-[#C93478] font-bold text-sm mb-6">* UN ÚLTIMO RECUERDO *</h2>
+                
+                <div class="flex justify-center gap-2 mb-6">
+                    <div class="w-3 h-3 bg-[#DF2956]"></div>
+                    <div class="w-3 h-3 bg-[#343A72]"></div>
+                    <div class="w-3 h-3 bg-[#1B5676]"></div>
+                </div>
+
+                <p class="text-[11px] text-[#2F2650] font-bold mb-6">
+                    SI QUIERES, PUEDES VERLO AHORA.<br>SI NO, GUÁRDALO PARA DESPUÉS.
+                </p>
+
+                <div class="border-y-2 border-[#343A72] border-dotted py-4 mb-8">
+                    <p class="text-sm text-[#2F2650] italic">
+                        "Hay cosas que no se dicen a la ligera. Esto es una de ellas."
+                    </p>
+                </div>
+
+                <button onclick="goToStep(2)" class="bg-[#DF2956] text-white px-6 py-3 border-4 border-[#2F2650] pixel-btn-shadow font-bold uppercase text-xs mb-6 w-full tracking-tighter">
+                    VER (SOLO PARA TI)
+                </button>
+
+                <button onclick="toggleModal(true)" class="text-[#343A72] text-[10px] font-bold block mx-auto">
+                    [ ENTRAR CON CLAVE ]
+                </button>
+
+                <p class="text-[10px] text-[#1B5676] mt-8 tracking-widest uppercase font-bold">Paso 01 / 06</p>
+            </div>
+        </div>
+<!-- PÁGINAS SIGUIENTES (MOLDE) -->
+        <div id="step-generic" class="step-content">
+            <div class="bg-[#C1D3AC] p-8 border-[6px] border-[#2F2650] pixel-shadow text-center">
+                <h2 id="step-title" class="text-lg font-bold text-[#2F2650] mb-4 uppercase">ETAPA 2</h2>
+                <div class="w-16 h-16 mx-auto mb-6 bg-[#343A72] border-4 border-[#2F2650] flex items-center justify-center pixel-btn-shadow">
+                    <span class="text-[#C93478] text-2xl">❤</span>
+                </div>
+                <p class="text-xs font-bold text-[#2F2650]">CARGANDO SIGUIENTE PIEZA...</p>
+                <button onclick="goToStep(1)" class="mt-8 text-[10px] text-[#DF2956] underline font-bold uppercase">
+                    [ REINICIAR ]
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal de Contraseña -->
+    <div id="password-modal" class="fixed inset-0 bg-[#2F2650]/90 backdrop-blur-sm z-50 hidden items-center justify-center p-6">
+        <div class="bg-[#C1D3AC] border-4 border-[#2F2650] p-6 max-w-xs w-full text-center space-y-4 pixel-shadow">
+            <h3 class="text-xs font-bold text-[#2F2650]">SISTEMA BLOQUEADO_</h3>
+            <input type="password" id="pass-input" class="w-full bg-white border-2 border-[#2F2650] outline-none text-center py-2 text-[#2F2650]" placeholder="****">
+            <div class="flex justify-center gap-4 pt-2">
+                <button onclick="toggleModal(false)" class="text-[10px] text-[#DF2956] font-bold">CERRAR</button>
+                <button onclick="checkPass()" class="text-[10px] text-[#2F2650] font-bold">CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToStep(stepNumber) {
+            // Ocultar todos
+            document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+            
+            if(stepNumber === 1) {
+                document.getElementById('step-1').classList.add('active');
+            } else {
+                const generic = document.getElementById('step-generic');
+                document.getElementById('step-title').innerText = 'ETAPA ' + stepNumber;
+                generic.classList.add('active');
+            }
+            window.scrollTo(0,0);
+        }
+
+        function toggleModal(show) {
+            document.getElementById('password-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        function checkPass() {
+            // Aquí podrías validar, por ahora solo avanza
+            toggleModal(false);
+            goToStep(2);
+        }
+    </script>
+</body>
+</html>
