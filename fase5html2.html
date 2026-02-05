@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fase 6: El Horizonte de Eventos</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="fase5css.css">
+</head>
+<body>
+
+    <div id="start-screen" class="overlay-full">
+        <div class="intro-content">
+            <h1 class="glitch-text" data-text="FASE 5">FASE 6</h1>
+            <h2 class="sub-title">LA ÚLTIMA VERDAD</h2>
+            <p class="blink-text">[ TOCAR PARA COMENZAR ]</p>
+        </div>
+    </div>
+
+    <div class="crt-scanlines"></div> <div class="vignette-layer"></div> <div class="flash-overlay"></div> <div id="ui-hud">
+        <div class="hud-top-left">
+            <span class="location-tag">UBICACIÓN: EL VACÍO</span>
+        </div>
+        <div class="hud-top-right">
+            <span class="collection-counter">FRAGMENTOS: <span id="fragment-count">0</span>/3</span>
+            <div class="progress-bar-frame">
+                <div id="progress-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-viewport">
+        
+        <div id="bg-layer-1" class="parallax-layer"></div>
+
+        <div id="bg-layer-2" class="parallax-layer">
+            </div>
+
+        <div id="world-track">
+            <div class="ground-line"></div>
+            
+            <div class="interactive-zone monolith" id="monolith-0" style="left: 800px;">
+                <div class="crystal-shard"></div>
+                <div class="zone-marker">!</div>
+            </div>
+
+            <div class="interactive-zone monolith" id="monolith-1" style="left: 1800px;">
+                <div class="crystal-shard"></div>
+                <div class="zone-marker">!</div>
+            </div>
+
+            <div class="interactive-zone monolith" id="monolith-2" style="left: 2800px;">
+                <div class="crystal-shard"></div>
+                <div class="zone-marker">!</div>
+            </div>
+
+            <div id="target-npc-container" style="left: 3600px;">
+                <img id="npc-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo%20normal.webp" alt="Yo">
+                <div class="glow-aura"></div>
+            </div>
+        </div>
+
+        <div id="player-container">
+            <img id="player-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp" alt="Ella">
+        </div>
+
+        <div id="fg-fog-layer" class="parallax-layer"></div>
+    </div>
+
+    <div id="interaction-layer">
+        
+        <button id="action-btn" class="hidden">LEER MEMORIA</button>
+
+        <div id="rpg-dialogue-box" class="hidden">
+            <div class="dialogue-header" id="dialogue-title">NOMBRE</div>
+            <div class="dialogue-body" id="dialogue-text">...</div>
+            <div class="dialogue-footer">TOCA PARA CONTINUAR ▼</div>
+        </div>
+
+        <div class="touch-controls">
+            <button id="btn-left" class="d-pad-btn">◀</button>
+            <button id="btn-right" class="d-pad-btn">▶</button>
+        </div>
+    </div>
+
+    <div id="ending-overlay" class="hidden">
+        <div class="heart-pulse">❤</div>
+        <h2 class="fade-in-text">CONEXIÓN RESTABLECIDA</h2>
+        <p class="fade-in-text delay">Fin del Juego. Inicio de la Vida.</p>
+    </div>
+
+    <audio id="bg-music" loop>
+        <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/pixel-dreams-259187.ogg" type="audio/ogg">
+    </audio>
+
+    <script type="module" src="fase5scrpit.js" defer></script>
+
+    <script type="module">
+        import { registrarPaso } from './telemetry.js';
+        registrarPaso("Fase 5.3: Horizonte Final");
+    </script>
+</body>
+</html>
+
+</body>
+</html>

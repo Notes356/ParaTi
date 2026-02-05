@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fase 2: Conexión</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================================
+           1. CONFIGURACIÓN MAESTRA (VARIABLES)
+           ========================================= */
+        :root {
+            --c-bg-overlay: rgba(10, 10, 20, 0.75); /* Oscurecimiento atmosférico */
+            --c-text-primary: #e0e0e0;
+            --c-text-highlight: #fff;
+            --c-bubble-bg: rgba(23, 23, 40, 0.95);
+            --c-accent: #ff6b81;
+            --c-border-light: #ffffff;
+            --c-border-shadow: #000000;
+            
+            --anim-speed: 0.5s;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'VT323', monospace;
+            user-select: none; /* Evitar selección de texto */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* =========================================
+           2. CAPAS DE FONDO Y AMBIENTE
+           ========================================= */
+        
+        /* Imagen de Fondo (GitHub RAW) */
+        #background-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/93b1e8648e0e549080f108abcaf7eea0a2e9a657/image-2.webp');
+            background-size: cover;
+            background-position: center center;
+            z-index: 0;
+            filter: brightness(0.65) contrast(1.1); /* Ajuste de color cinematográfico */
+            transition: filter 3s ease;
+        }
+
+        /* Efecto Viñeta (Bordes oscuros) */
+        .vignette {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Partículas Pixeladas (Detalle sutil) */
+        #particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            background: white;
+            width: 2px; height: 2px;
+            box-shadow: 0 0 4px white;
+            opacity: 0;
+            animation: floatParticle 10s infinite linear;
+        }
+
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) translateX(20px); opacity: 0; }
+        }
+
+        /* =========================================
+           3. INTERFAZ DE USUARIO (UI)
+           ========================================= */
+
+        /* Contenedor de Mensajes */
+        #message-area {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 80%; /* Deja espacio abajo */
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Mensajes nacen abajo */
+            align-items: center;
+            padding-bottom: 40px;
+            pointer-events: none; /* Dejar pasar clicks salvo en burbujas */
+        }
+
+        /* Burbuja de Texto Estilo RPG */
+        .pixel-bubble {
+            background: var(--c-bubble-bg);
+            color: var(--c-text-primary);
+            padding: 18px 24px;
+            margin: 12px 0;
+            font-size: 1.5rem;
+            line-height: 1.2;
+            text-align: center;
+            max-width: 85%;
+            pointer-events: auto; /* Habilitar click */
+            cursor: pointer;
+            
+            /* Bordes Pixel Perfect usando Box-Shadow */
+            box-shadow: 
+                inset 2px 2px 0px rgba(255,255,255,0.1), /* Brillo interno */
+                0 0 0 2px var(--c-border-shadow),        /* Borde negro fino */
+                0 0 0 4px var(--c-border-light),         /* Borde blanco grueso */
+                6px 6px 8px rgba(0,0,0,0.6);             /* Sombra de caída */
+            
+            transform: translateY(30px) scale(0.9);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+        }
+
+        /* Clase para animar entrada */
+        .pixel-bubble.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Efecto al tocar */
+        .pixel-bubble:active {
+            transform: scale(0.95);
+            color: var(--c-accent);
+            border-color: var(--c-accent);
+        }
+
+        /* =========================================
+           4. BARRA DE PROGRESO ARCOÍRIS
+           ========================================= */
+        .progress-wrapper {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px; /* Ancho compacto */
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0; /* Oculto hasta iniciar */
+            transition: opacity 1s;
+        }
+
+        .rpg-bar-container {
+            width: 100%;
+            height: 18px;
+            background: #1a1a1a;
+            /* Borde doble estilo SNES */
+            border: 2px solid #fff;
+            outline: 2px solid #000;
+            padding: 2px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .rainbow-fill {
+            height: 100%;
+            width: 0%; /* Empieza vacío */
+            background: linear-gradient(
+                90deg, 
+                #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3
+            );
+            background-size: 200% 200%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: rainbowFlow 3s linear infinite;
+        }
+
+        /* Decoración de brillo en la barra */
+        .rainbow-fill::after {
+            content: '';
+            position: absolute; top:0; left:0; right:0; bottom:0;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.4) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        @keyframes rainbowFlow { 
+            0% { background-position: 100% 50%; } 
+            100% { background-position: 0% 50%; } 
+        }
+
+        /* =========================================
+           5. BOTÓN DE NAVEGACIÓN
+           ========================================= */
+        #next-stage-container {
+            position: fixed; bottom: 80px; left: 0; right: 0;
+            display: flex; justify-content: center;
+            z-index: 30;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease-in;
+        }
+
+        .pixel-btn-glow {
+            pointer-events: inherit;
+            background: var(--c-accent);
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            padding: 16px 32px;
+            border: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 
+                inset 2px 2px 0 rgba(255,255,255,0.4),
+                inset -2px -2px 0 rgba(0,0,0,0.2),
+                0 0 0 2px #000,
+                0 0 0 4px #fff,
+                0 6px 15px var(--c-accent);
+            animation: pulseGlow 2s infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); box-shadow: ... 0 6px 15px var(--c-accent); }
+            50% { transform: scale(1.05); box-shadow: ... 0 0 25px var(--c-accent); }
+        }
+
+        /* =========================================
+           6. PANTALLAS DE ESTADO (OVERLAYS)
+           ========================================= */
+        #overlay-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.8s;
+        }
+
+        .loading-text { font-family: 'VT323'; font-size: 1.2rem; color: #666; margin-top:10px;}
+        .start-text { font-family: 'Press Start 2P'; font-size: 14px; color: var(--c-accent); animation: blink 1s infinite; margin-top: 20px;}
+        
+        @keyframes blink { 50% { opacity: 0; } }
+/* Efecto de TV antigua y Viñeta */
+body::after {
+    content: " ";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%), 
+                radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.3) 100%);
+    background-size: 100% 3px, 100% 100%;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+    </style>
+</head>
+<body>
+
+    <div id="overlay-screen">
+        <div style="font-size:40px; color:#ff6b81; animation: pulseGlow 1s infinite;">❤</div>
+        <div id="loading-msg" class="loading-text">Cargando recuerdos...</div>
+        <div id="start-msg" class="start-text" style="display:none;">[ TOCAR PANTALLA ]</div>
+    </div>
+
+    <div id="background-layer"></div>
+    <div class="vignette"></div>
+    <div id="particles"></div> <div id="message-area"></div>
+
+    <div class="progress-wrapper" id="ui-progress">
+        <div class="rpg-bar-container">
+            <div id="progress-fill" class="rainbow-fill"></div>
+        </div>
+    </div>
+
+    <div id="next-stage-container">
+        <button class="pixel-btn-glow" onclick="GameController.goToNextPhase()">SIGUIENTE FASE ➔</button>
+    </div>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/83cc5716717c3fcbd5b70a0fce22e619326aff70/pixelated-game-vibe-music-450640.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        /**
+         * CONFIGURACIÓN DE LOS MENSAJES
+         * Puedes editar esto libremente.
+         */
+        const STORY_TEXTS = [
+            "A veces las palabras sobran...",
+            "Pero los sentimientos queman.",
+            "He guardado este lo-fi para ti.",
+            "Escucha el ritmo con calma.",
+            "Estamos a mitad del camino.",
+            "¿Me acompañas un poco más?"
+        ];
+
+        /**
+         * CONTROLADOR DE AUDIO (SINTETIZADOR 8-BIT)
+         * Genera sonidos sin necesidad de descargar archivos extra.
+         */
+        const AudioSys = {
+            ctx: null,
+            musicEl: document.getElementById('bg-music'),
+
+            init() {
+                // Inicializar contexto de audio web
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+            },
+
+            playMusic() {
+                // Reanudar contexto si estaba suspendido (política navegadores)
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                
+                this.musicEl.volume = 0; // Empezar en silencio
+                const playPromise = this.musicEl.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // Efecto Fade-In (subir volumen suavemente)
+                        let vol = 0;
+                        const fade = setInterval(() => {
+                            if (vol < 0.6) { // Volumen máximo 0.6
+                                vol += 0.05;
+                                this.musicEl.volume = vol;
+                            } else {
+                                clearInterval(fade);
+                            }
+                        }, 200);
+                    }).catch(error => console.log("Audio bloqueado:", error));
+                }
+            },
+
+            playBloop() {
+                // Generar sonido "bloop" tipo videojuego retro
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'square'; // Onda cuadrada = sonido 8-bit
+                
+                // Variación de tono aleatoria ligera para que suene orgánico
+                const freq = 350 + Math.random() * 50; 
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq + 200, this.ctx.currentTime + 0.1);
+
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+        };
+
+        /**
+         * CONTROLADOR DE EFECTOS VISUALES
+         */
+        const Visuals = {
+            createParticles() {
+                const container = document.getElementById('particles');
+                const count = 30; // Cantidad de estrellas/luciérnagas
+
+                for (let i = 0; i < count; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    // Posición aleatoria
+                    p.style.left = Math.random() * 100 + 'vw';
+                    p.style.top = Math.random() * 100 + 'vh';
+                    // Retraso aleatorio para que no salgan todas a la vez
+                    p.style.animationDelay = Math.random() * 5 + 's';
+                    p.style.animationDuration = (8 + Math.random() * 10) + 's';
+                    container.appendChild(p);
+                }
+            }
+        };
+
+        /**
+         * CONTROLADOR DEL JUEGO / EXPERIENCIA
+         */
+        const GameController = {
+            index: 0,
+            uiProgress: document.getElementById('ui-progress'),
+            fill: document.getElementById('progress-fill'),
+            msgArea: document.getElementById('message-area'),
+            nextBtn: document.getElementById('next-stage-container'),
+
+            // Estado de carga
+            checkAssets() {
+                const music = document.getElementById('bg-music');
+                const bgImg = new Image();
+                bgImg.src = "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/93b1e8648e0e549080f108abcaf7eea0a2e9a657/image-2.webp";
+
+                // Simulamos una verificación rápida
+                bgImg.onload = () => this.readyToStart();
+                bgImg.onerror = () => this.readyToStart(); // Proceder aunque falle img
+                music.oncanplaythrough = () => this.readyToStart();
+                
+                // Timeout de seguridad por si tarda mucho
+                setTimeout(() => this.readyToStart(), 2000);
+            },
+
+            readyToStart() {
+                document.getElementById('loading-msg').style.display = 'none';
+                document.getElementById('start-msg').style.display = 'block';
+                
+                const overlay = document.getElementById('overlay-screen');
+                overlay.onclick = () => {
+                    this.startExperience();
+                };
+            },
+
+            startExperience() {
+                // Ocultar overlay
+                const overlay = document.getElementById('overlay-screen');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 800);
+
+                // Iniciar sistemas
+                AudioSys.init();
+                AudioSys.playMusic();
+                Visuals.createParticles();
+                
+                // Mostrar barra de progreso
+                this.uiProgress.style.opacity = '1';
+
+                // Empezar ciclo de mensajes
+                this.nextMessage();
+            },
+
+            nextMessage() {
+                if (this.index < STORY_TEXTS.length) {
+                    this.createBubble(STORY_TEXTS[this.index]);
+                    
+                    // Actualizar barra
+                    const pct = ((this.index + 1) / STORY_TEXTS.length) * 100;
+                    this.fill.style.width = pct + "%";
+
+                    this.index++;
+                    // Tiempo entre mensajes (ajustable)
+                    setTimeout(() => this.nextMessage(), 3800); 
+                } else {
+                    // Fin de la secuencia
+                    setTimeout(() => {
+                        this.nextBtn.style.opacity = '1';
+                        this.nextBtn.style.pointerEvents = 'auto';
+                    }, 1500);
+                }
+            },
+
+            createBubble(text) {
+                const bubble = document.createElement('div');
+                bubble.className = 'pixel-bubble';
+                bubble.innerText = text;
+
+                // Evento click/tap en burbuja
+                bubble.onclick = () => {
+                    AudioSys.playBloop();
+                    bubble.style.color = "#ff6b81"; // Cambia a rosa
+                    bubble.style.borderColor = "#ff6b81";
+                };
+
+                // Añadir al DOM
+                this.msgArea.appendChild(bubble);
+
+                // Forzar reflow para activar transición CSS
+                setTimeout(() => bubble.classList.add('visible'), 50);
+
+                // Limpieza de mensajes viejos (Mantener solo los últimos 2-3 visibles)
+                const children = this.msgArea.children;
+                if (children.length > 3) {
+                    const old = children[0];
+                    old.style.opacity = '0';
+                    old.style.transform = 'translateY(-20px) scale(0.9)';
+                    setTimeout(() => {
+                        if(old.parentNode) old.parentNode.removeChild(old);
+                    }, 500);
+                }
+            },
+
+            goToNextPhase() {
+                AudioSys.playBloop();
+                document.body.style.transition = "opacity 1.5s ease-out";
+                document.body.style.opacity = "0";
+                
+                // Reducción de volumen de música al salir
+                let vol = AudioSys.musicEl.volume;
+                const fadeOut = setInterval(() => {
+                    if (vol > 0.05) {
+                        vol -= 0.05;
+                        AudioSys.musicEl.volume = vol;
+                    } else {
+                        clearInterval(fadeOut);
+                    }
+                }, 100);
+
+                setTimeout(() => {
+                    // AQUÍ IRÁ LA REDIRECCIÓN A LA PESTAÑA 3
+                    (window.location.href = 'fase3.html');
+                    // window.location.href = "fase3.html";
+                }, 1500);
+            }
+        };
+
+        // Iniciar
+        window.onload = () => GameController.checkAssets();
+
+    </script>
+        <script type="module">
+        import { registrarPaso } from './telemetry.js';
+        registrarPaso("Fase 2: Conexión");
+    </script>
+</body>
+</html>
+<script>
+    function crearParticulas() {
+        const container = document.body;
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.style.position = 'fixed';
+            p.style.width = '2px';
+            p.style.height = '2px';
+            p.style.background = 'white';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+            p.style.opacity = Math.random();
+            p.style.borderRadius = '50%';
+            p.style.pointerEvents = 'none';
+            container.appendChild(p);
+
+            // Animación simple de flotado
+            p.animate([
+                { transform: 'translateY(0) translateX(0)', opacity: 0 },
+                { opacity: 0.8, offset: 0.5 },
+                { transform: `translateY(-${Math.random() * 100 + 50}px) translateX(${Math.random() * 20 - 10}px)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 3000 + 2000,
+                iterations: Infinity,
+                delay: Math.random() * 5000
+            });
+        }
+    }
+    crearParticulas();
+</script>
+
+</body>
+</html>

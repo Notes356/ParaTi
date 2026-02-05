@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Fase 5.1: La Verdad (Final)</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+<style>
+/* 1. CONFIGURACIÓN VISUAL */
+:root {
+  --c-bg: #050508;
+  --c-star: #ffffff;
+  --c-gold: #ffd700; /* Color de la verdad */
+  --c-cyan: #4deeea; /* Color del sistema */
+  --c-err: #ff004c;
+}
+
+body, html {
+  margin: 0; padding: 0; width: 100%; height: 100%;
+  background-color: var(--c-bg);
+  overflow: hidden;
+  font-family: 'Press Start 2P', cursive; /* Fuente principal juego */
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+
+/* CANVAS 3D */
+canvas { display: block; width: 100%; height: 100%; }
+
+/* UI DE AMBIENTE (Scanlines y Viñeta) */
+.scanlines {
+  position: fixed; inset: 0; pointer-events: none; z-index: 10;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 1px, transparent 1px, transparent 4px);
+  background-size: 100% 4px;
+}
+.vignette {
+  position: fixed; inset: 0; pointer-events: none; z-index: 9;
+  background: radial-gradient(circle, transparent 50%, #000 130%);
+}
+
+/* UI SUPERIOR (HUD) */
+#hud {
+  position: fixed; top: 20px; width: 100%; text-align: center; z-index: 20;
+  pointer-events: none;
+}
+.bar-container {
+  width: 60%; max-width: 300px; height: 12px; margin: 0 auto;
+  border: 2px solid #333; background: #000; border-radius: 4px;
+  position: relative;
+}
+.bar-fill {
+  height: 100%; width: 0%; background: var(--c-cyan);
+  transition: width 0.2s, background 0.3s;
+  box-shadow: 0 0 10px var(--c-cyan);
+}
+.status-txt {
+  font-family: 'VT323', monospace; font-size: 18px; color: #888;
+  margin-top: 8px; text-shadow: 1px 1px 0 #000;
+}
+
+/* PANTALLA DE INICIO (Overlay negro) */
+#start-screen {
+  position: fixed; inset: 0; background: #000; z-index: 999;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  color: white; text-align: center;
+}
+.blink { animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* MENSAJE DE VICTORIA (La corrección crítica) */
+#victory-layer {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; justify-content: center; align-items: center;
+  pointer-events: none; opacity: 0;
+  transition: opacity 0.5s;
+  background: rgba(0,0,0,0.8); /* Fondo oscuro para resaltar la letra */
+}
+#victory-word {
+  color: var(--c-gold);
+  text-shadow: 4px 4px 0px #000, 0 0 30px var(--c-gold);
+  text-align: center;
+  line-height: 1.5;
+  /* LÓGICA RESPONSIVE EXTREMA: */
+  /* Usa unidades de viewport (vw) para asegurar que calce */
+  font-size: 12vw; 
+  width: 95%;
+  word-wrap: break-word; /* Romper si es necesario (aunque el vw lo evita) */
+  animation: slam 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slam { 0%{transform: scale(3); opacity:0;} 100%{transform: scale(1); opacity:1;} }
+
+/* NUEVO CSS PARA ELLA */
+#ella-container {
+    position: fixed;
+    bottom: 15%; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px; height: 140px; /* Tamaño fijo del contenedor */
+    z-index: 15;
+    pointer-events: none;
+    animation: floatBubble 6s ease-in-out infinite;
+}
+
+.bubble-glass {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1), rgba(77, 238, 234, 0.05) 60%, rgba(77, 238, 234, 0.2));
+    border: 1px solid rgba(77, 238, 234, 0.3);
+    box-shadow: 0 0 15px rgba(77, 238, 234, 0.2), inset 0 0 10px rgba(255,255,255,0.1);
+    backdrop-filter: blur(2px);
+}
+
+#ella-img {
+    width: 80%; height: 80%; /* ESTO CONTROLA QUE NO SE VEA GIGANTE */
+    position: absolute; top: 10%; left: 10%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.4));
+    transition: transform 0.3s;
+}
+
+@keyframes floatBubble {
+    0%, 100% { transform: translate(-50%, 0px); }
+    50% { transform: translate(-50%, -20px); }
+}
+
+.happy-jump {
+    animation: jumpAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes jumpAnim {
+    0% { transform: translate(-50%, 0) scale(1); }
+    40% { transform: translate(-50%, -40px) scale(1.2); }
+    100% { transform: translate(-50%, 0) scale(1); }
+}
+
+
+
+/* GLITCH FX */
+.glitch-flash {
+  animation: glitch-anim 0.3s infinite;
+  background: white;
+}
+@keyframes glitch-anim {
+  0% { transform: translate(0); opacity: 0.8; }
+  20% { transform: translate(-5px, 5px); opacity: 0.8; }
+  40% { transform: translate(-5px, -5px); opacity: 0.8; }
+  60% { transform: translate(5px, 5px); opacity: 0.8; }
+  80% { transform: translate(5px, -5px); opacity: 0.8; }
+  100% { transform: translate(0); opacity: 0.8; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<div id="start-screen">
+  <h1 style="color:var(--c-cyan); font-size: 20px; line-height: 1.5;">FASE 5<br>EL INCONSCIENTE</h1>
+  <p style="font-family:'VT323'; font-size: 22px; color:#aaa; margin-top:20px;">[ TOCA PARA ENTRAR ]</p>
+</div>
+
+<div id="hud">
+  <div class="bar-container"><div class="bar-fill" id="bar"></div></div>
+  <div class="status-txt" id="status">BUSCANDO SEÑAL...</div>
+</div>
+
+<div id="victory-layer">
+  <div id="victory-word"></div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="ella-container">
+    <div class="bubble-glass"></div>
+    <img id="ella-img" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp">
+</div>
+
+<audio id="bg-music" loop>
+    <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/724f86883a7b62a6625dd5b97101102a70d50f18/Fase4/city-shadows-259186.ogg" type="audio/ogg">
+</audio>
+
+<script>
+/* ==========================================
+   MOTOR LÓGICO V3 (OPTIMIZADO PARA MÓVIL)
+   ========================================== */
+
+const Game = {
+    canvas: document.getElementById('game'),
+    ctx: null,
+    width: 0, height: 0,
+    
+    // NIVELES (Palabras)
+    levels: ["MIEDO", "VERDAD", "SINCERIDAD"], 
+    levelIdx: 0,
+      // PEGAR ESTO AQUÍ:
+    echoPhrases: ["Silencio", "Te Extraño", "Dudas", "Ecos", "Espacio", "Luz", "Tiempo"],
+
+    
+    // ESTADO
+    rot: { x: 150, y: 60 }, // Empezar desalineado
+    locked: false,
+    letters: [],
+    stars: [],
+    
+    // CONFIGURACIÓN AUDIO
+    music: document.getElementById('bg-music'),
+    audioContext: null,
+
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        
+        this.createStars();
+        this.loadLevel();
+        this.loop();
+        
+        // CONTROLES TÁCTILES Y MOUSE
+        let startX, startY, isDrag = false;
+        
+        const start = (e) => {
+            if(this.locked) return;
+            isDrag = true;
+            const p = e.touches ? e.touches[0] : e;
+            startX = p.clientX;
+            startY = p.clientY;
+        };
+        
+        const move = (e) => {
+            if(!isDrag || this.locked) return;
+            const p = e.touches ? e.touches[0] : e;
+            const dx = (p.clientX - startX) * 0.5;
+            const dy = (p.clientY - startY) * 0.5;
+            
+            this.rot.y += dx;
+            this.rot.x += dy;
+            
+            startX = p.clientX;
+            startY = p.clientY;
+            
+            // Vibración háptica leve al mover
+            // if(navigator.vibrate) navigator.vibrate(2); 
+        };
+        
+        const end = () => isDrag = false;
+
+        window.addEventListener('mousedown', start);
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchstart', start, {passive: false});
+        window.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, {passive: false});
+        window.addEventListener('touchend', end);
+    },
+
+    resize() {
+        this.width = this.canvas.width = window.innerWidth;
+        this.height = this.canvas.height = window.innerHeight;
+        // Si cambiamos tamaño, recalcular posiciones para que quepan
+        if(this.letters.length > 0) this.layoutLetters(this.levels[this.levelIdx]);
+    },
+
+    startAudio() {
+        // Truco para desbloquear audio en móviles
+        this.music.volume = 0.5;
+        this.music.play().then(() => {
+            console.log("Música iniciada");
+        }).catch(e => console.log("Error audio:", e));
+        
+        // Generar oscilador para SFX
+        const AC = window.AudioContext || window.webkitAudioContext;
+        this.audioContext = new AC();
+    },
+
+    playTone(freq) {
+        if(!this.audioContext) return;
+        const o = this.audioContext.createOscillator();
+        const g = this.audioContext.createGain();
+        o.frequency.value = freq;
+        g.gain.value = 0.1;
+        g.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.3);
+        o.connect(g); g.connect(this.audioContext.destination);
+        o.start(); o.stop(this.audioContext.currentTime + 0.3);
+    },
+
+        createStars() {
+        this.stars = [];
+        for(let i=0; i<350; i++) { 
+            // 15% de probabilidad de ser una palabra ECO
+            const isEcho = Math.random() < 0.13; 
+            
+            this.stars.push({
+                x: (Math.random()-0.5) * 2000,
+                y: (Math.random()-0.5) * 2000,
+                z: (Math.random()-0.5) * 2000,
+                // Si es eco, elige una frase. Si no, es null
+                text: isEcho ? this.echoPhrases[Math.floor(Math.random() * this.echoPhrases.length)] : null,
+                opacity: Math.random() * 0.5 + 0.1
+            });
+        }
+    },
+
+    loadLevel() {
+        const word = this.levels[this.levelIdx];
+        this.layoutLetters(word);
+        
+        // Reset rotación difícil
+        this.rot = { 
+            x: 100 + Math.random()*100, 
+            y: 100 + Math.random()*100 
+        };
+        
+        // Reset UI
+        document.getElementById('status').innerText = "BUSCANDO: " + word.replace(/[A-Z]/g, '?');
+        document.getElementById('bar').style.width = '0%';
+        document.getElementById('victory-layer').style.opacity = '0';
+        this.locked = false;
+    },
+
+    layoutLetters(word) {
+        this.letters = [];
+        const n = word.length;
+        
+        // CÁLCULO CRÍTICO DE ESPACIO
+        // Dividimos el ancho de pantalla (menos márgenes) entre el número de letras
+        const safeWidth = this.width * 0.9; 
+        const spacing = Math.min(50, safeWidth / n); // Máximo 50px, pero se achica si no cabe
+        
+        for(let i=0; i<n; i++) {
+            const xOffset = (i - (n-1)/2) * spacing;
+            
+            this.letters.push({
+                char: word[i],
+                // Posición Target (Ordenada)
+                tx: xOffset, ty: 0, tz: 0,
+                // Posición Base (Caótica)
+                bx: xOffset + (Math.random()-0.5)*600,
+                by: (Math.random()-0.5)*600,
+                bz: (Math.random()-0.5)*800,
+                // Posición Actual
+                x: 0, y: 0, z: 0
+            });
+        }
+    },
+
+    loop() {
+        // Limpiar
+        this.ctx.fillStyle = '#050508';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+        
+        const cx = this.width / 2;
+        const cy = this.height / 2;
+
+                        // 1. DIBUJAR ESTRELLAS Y ECOS (VERSION MEJORADA CON BRILLO)
+        this.stars.forEach(s => {
+            const pt = this.project(s.x, s.y, s.z, this.rot.x*0.2, this.rot.y*0.2); 
+            
+            if(pt.s > 0) {
+                if (s.text) {
+                    // DIBUJAR PALABRA ECO CON BRILLO
+                    this.ctx.globalAlpha = s.opacity * 0.9; 
+                    // Tamaño aumentado: Ahora es mucho más visible
+                    const fontSize = Math.max(10, 20 * pt.s); 
+                    this.ctx.font = `${fontSize}px 'VT323'`; 
+                    
+                    // EFECTO DE RESPLANDOR (GLOW)
+                    this.ctx.shadowBlur = 15;
+                    this.ctx.shadowColor = "#FFFFFF";
+                    this.ctx.fillStyle = "#FFFFFF"; 
+                    
+                    this.ctx.textAlign = "center";
+                    this.ctx.fillText(s.text, cx + pt.x, cy + pt.y);
+                    this.ctx.shadowBlur = 0; // Limpiar brillo para no afectar lo demás
+                } else {
+                    // DIBUJAR ESTRELLAS (MÁS VISIBLES)
+                    this.ctx.globalAlpha = s.opacity;
+                    this.ctx.fillStyle = "white";
+                    this.ctx.fillRect(cx + pt.x, cy + pt.y, 2.5 * pt.s, 2.5 * pt.s);
+                }
+            }
+        });
+        this.ctx.globalAlpha = 1;
+
+
+
+        // 2. LÓGICA DE ALINEACIÓN
+        // Normalizar ángulos a un ciclo de 360
+        let errX = this.rot.x % 360; 
+        if(errX > 180) errX -= 360; if(errX < -180) errX += 360;
+        
+        let errY = this.rot.y % 360;
+        if(errY > 180) errY -= 360; if(errY < -180) errY += 360;
+
+        const dist = Math.sqrt(errX*errX + errY*errY);
+        
+        // Calcular "Factor de Orden" (0 = Caos, 1 = Orden)
+        // Cuanto más cerca de 0 grados, más ordenado
+        const order = Math.max(0, 1 - (dist / 100)); // Rango de efecto 100 grados
+        
+        // Actualizar UI
+        const barPct = Math.min(100, order * 120); // Multiplicador para llenar la barra antes
+        document.getElementById('bar').style.width = barPct + '%';
+        
+        if(barPct > 95) {
+            document.getElementById('bar').style.backgroundColor = '#ffd700';
+            document.getElementById('status').style.color = '#ffd700';
+        } else {
+            document.getElementById('bar').style.backgroundColor = '#4deeea';
+            document.getElementById('status').style.color = '#888';
+        }
+
+        // 3. DIBUJAR LETRAS
+        this.letters.forEach(l => {
+            // Interpolación Linear (Lerp) basada en el orden
+            // Si order es 1, usa Target (tx). Si es 0, usa Base (bx).
+            // Elevamos al cuadrado para que el efecto de "snap" sea satisfactorio al final
+            const f = order * order; 
+            
+            l.x = l.bx * (1-f) + l.tx * f;
+            l.y = l.by * (1-f) + l.ty * f;
+            l.z = l.bz * (1-f) + l.tz * f;
+
+            // Proyectar 3D -> 2D
+            const pt = this.project(l.x, l.y, l.z, this.rot.x, this.rot.y);
+            
+            if(pt.s > 0) {
+                // Tamaño dinámico: Más grande si hay orden
+                const fontSize = (20 + (30 * order)) * pt.s;
+                this.ctx.font = `${fontSize}px 'Press Start 2P'`;
+                
+                // Color: Se vuelve dorado al alinear
+                if(order > 0.9) {
+                    this.ctx.fillStyle = "#ffd700";
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowColor = "orange";
+                    // Glitch visual aleatorio
+                    if(Math.random() < 0.1) this.ctx.fillStyle = "#fff";
+                } else {
+                    this.ctx.fillStyle = `rgba(77, 238, 234, ${0.5 + order*0.5})`;
+                    this.ctx.shadowBlur = 0;
+                }
+                
+                this.ctx.textAlign = "center";
+                this.ctx.textBaseline = "middle";
+                this.ctx.fillText(l.char, cx + pt.x, cy + pt.y);
+                this.ctx.shadowBlur = 0; // Reset
+            }
+        });
+
+        // 4. CHECK WIN
+        if(!this.locked && order > 0.96) {
+            this.win();
+        }
+
+        requestAnimationFrame(() => this.loop());
+    },
+
+    project(x, y, z, rotX, rotY) {
+        // Matemáticas de rotación 3D
+        const radX = rotX * Math.PI / 180;
+        const radY = rotY * Math.PI / 180;
+        
+        // Rotar Y
+        const x1 = x * Math.cos(radY) - z * Math.sin(radY);
+        const z1 = x * Math.sin(radY) + z * Math.cos(radY);
+        
+        // Rotar X
+        const y2 = y * Math.cos(radX) - z1 * Math.sin(radX);
+        const z2 = y * Math.sin(radX) + z1 * Math.cos(radX);
+        
+        // Perspectiva
+        const scale = 500 / (500 + z2);
+        return { x: x1 * scale, y: y2 * scale, s: scale };
+    },
+
+    win() {
+        this.locked = true;
+              // EFECTO DE SALTO
+        const ella = document.getElementById('ella-container');
+        if(ella) {
+            ella.classList.add('happy-jump');
+            setTimeout(() => ella.classList.remove('happy-jump'), 1000);
+        }
+
+        this.playTone(880); // Sonido victoria
+        
+        // 1. OCULTAR 3D BORROSO
+        // No ocultamos el canvas, pero dejamos de renderizar letras en el siguiente frame (opcional)
+        // o simplemente superponemos la capa limpia.
+        
+        // 2. MOSTRAR CAPA LIMPIA (SOLUCIÓN A "NO SE VE")
+        const overlay = document.getElementById('victory-layer');
+        const wordDiv = document.getElementById('victory-word');
+        
+        overlay.style.opacity = '1';
+        // Texto 2D limpio, sin 3D, centrado perfecto
+        wordDiv.innerText = this.levels[this.levelIdx];
+        
+        // Efecto Flash
+        document.body.classList.add('glitch-flash');
+        setTimeout(() => document.body.classList.remove('glitch-flash'), 300);
+
+        // 3. SIGUIENTE NIVEL
+        setTimeout(() => {
+            if(this.levelIdx < this.levels.length - 1) {
+                this.levelIdx++;
+                this.loadLevel();
+            } else {
+                this.endGame();
+            }
+        }, 2500);
+    },
+
+    endGame() {
+       // alert("FASE 5.1 COMPLETADA.\nLa verdad ha sido aceptada.");//
+        // window.location.href = 'fase5_acto2.html';
+      (window.location.href = 'fase5html2.html');
+    }
+};
+
+// INICIAR AL TOCAR (PARA AUDIO)
+document.getElementById('start-screen').addEventListener('click', function() {
+    this.style.opacity = '0';
+    setTimeout(() => this.remove(), 500);
+    Game.init();
+    Game.startAudio();
+});
+
+</script>
+      <script type="module">
+        import { registrarPaso } from './telemetry.js';
+        registrarPaso("Fase 5.1: La Verdad");
+    </script>
+</body>
+</html>
+
+</body>
+</html>

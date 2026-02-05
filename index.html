@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragmentos de un Sueño</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        /* TUS ESTILOS ORIGINALES (INTACTOS) */
+        :root {
+            --c-sky-top: #3a7bd5; --c-sky-bottom: #fbb6ce; --c-panel-bg: #2a2a4a;
+            --c-panel-border: #4a4a7a; --c-accent: #ff6b81; --c-danger: #c0392b;
+            --c-text-light: #e0e0ff; --c-text-highlight: #ffd700; --c-shadow: rgba(0, 0, 0, 0.3);
+        }
+        body {
+            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; font-family: 'VT323', monospace; color: var(--c-text-light);
+            user-select: none; background: linear-gradient(to bottom, var(--c-sky-top), var(--c-sky-bottom));
+            position: relative;
+        }
+        .clouds {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.8) 10px, transparent 11px),
+                radial-gradient(circle at 25% 85%, rgba(255,255,255,0.8) 15px, transparent 16px),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
+                radial-gradient(circle at 85% 25%, rgba(255,255,255,0.6) 15px, transparent 16px);
+            background-size: 300px 300px; animation: floatClouds 60s linear infinite;
+        }
+        @keyframes floatClouds { from { background-position: 0 0; } to { background-position: 300px 100px; } }
+        .mountains {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; pointer-events: none; z-index: -1;
+            background-image: linear-gradient(to bottom, #2a2a4a 0%, #1a1a2a 100%);
+            clip-path: polygon(0% 100%, 0% 20%, 20% 40%, 40% 0%, 60% 30%, 80% 10%, 100% 50%, 100% 100%);
+        }
+        .pixel-card {
+            background: var(--c-panel-bg); border: 4px solid var(--c-panel-border); padding: 2.5rem;
+            width: 90%; max-width: 380px; text-align: center; position: relative;
+            box-shadow: 0 8px 16px var(--c-shadow); border-radius: 8px;
+        }
+        .pixel-card::after {
+            content: ''; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 2px dashed var(--c-panel-border); pointer-events: none;
+        }
+        .icon-heart {
+            font-size: 50px; color: var(--c-accent); text-shadow: 0 4px 8px var(--c-shadow);
+            margin-bottom: 15px; display: inline-block; animation: beat 3s infinite ease-in-out;
+        }
+        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        h1 { font-family: 'Press Start 2P', cursive; font-size: 18px; line-height: 1.6; margin-bottom: 1.5rem; color: #fff; text-shadow: 0 2px 4px var(--c-shadow); }
+        p { font-size: 1.4rem; line-height: 1.4; margin-bottom: 2rem; color: #d0d0f0; }
+        .pixel-input {
+            background: #1a1a2a; border: 3px solid var(--c-panel-border); color: var(--c-accent);
+            font-family: 'Press Start 2P', cursive; font-size: 14px; padding: 15px; width: 70%;
+            text-align: center; outline: none; margin-bottom: 25px; text-transform: uppercase; border-radius: 4px;
+        }
+        .pixel-input:focus { border-color: var(--c-accent); box-shadow: 0 0 10px var(--c-accent); }
+        .pixel-btn {
+            background: var(--c-accent); color: #fff; border: none; font-family: 'Press Start 2P', cursive;
+            font-size: 12px; padding: 15px 30px; cursor: pointer; box-shadow: 0 6px #c74b5e, 0 10px 20px var(--c-shadow);
+            border-radius: 4px; transition: all 0.1s; text-shadow: 0 2px #c74b5e;
+        }
+        .pixel-btn:active { transform: translateY(4px); box-shadow: 0 2px #c74b5e, 0 4px 10px var(--c-shadow); }
+        .btn-small { padding: 10px 15px; font-size: 10px; margin-top: 15px; background: var(--c-panel-border); box-shadow: 0 4px #3a3a5a; }
+        .btn-danger { background: var(--c-danger); box-shadow: 0 4px #922b21; margin-top: 10px; }
+        .hidden { display: none !important; }
+        .error-msg { color: var(--c-accent); margin-top: 20px; font-size: 16px; font-weight: bold; min-height: 24px; }
+        
+        #admin-panel {
+            display: none; position: absolute; z-index: 50; background: var(--c-panel-bg); border: 4px solid var(--c-accent);
+            top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 30px; width: 320px; border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .admin-trigger { position: fixed; bottom: 15px; right: 15px; opacity: 0.5; cursor: pointer; font-size: 24px; color: var(--c-text-light); transition: opacity 0.3s; }
+        .admin-trigger:hover { opacity: 1; }
+        .key-list { text-align: left; font-size: 14px; max-height: 200px; overflow-y: auto; margin: 20px 0; border: 2px dashed var(--c-panel-border); padding: 10px; background: #1a1a2a; border-radius: 4px;}
+        
+        /* Nuevo estilo para los datos de conexión */
+        .key-item { margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .key-meta { display: block; font-size: 12px; color: #aaa; margin-top: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="clouds"></div>
+    <div class="mountains"></div>
+
+    <main class="pixel-card animate__animated animate__fadeIn" id="view-login">
+        <div class="icon-heart">❤</div>
+        <h1>FRAGMENTOS<br>DE UN SUEÑO</h1>
+        <p>Una llave, una historia.<br>Introduce tu código.</p>
+        
+        <input type="text" id="user-key-input" class="pixel-input" placeholder="XXXX" maxlength="10">
+        <br>
+        <button class="pixel-btn" id="btn-enter">ABRIR PORTAL</button>
+        
+        <div id="login-msg" class="error-msg"></div>
+    </main>
+
+    <div class="admin-trigger" id="btn-open-admin">⚙</div>
+
+    <div id="admin-panel">
+        <h2 style="font-family:'Press Start 2P'; font-size:14px; color:var(--c-accent); margin-bottom:25px; text-align:center;">PANEL DEL CREADOR</h2>
+        
+        <div id="admin-auth-view" style="text-align: center;">
+            <input type="password" id="admin-pass-input" class="pixel-input" placeholder="CLAVE MAESTRA" style="width: 80%;">
+            <br>
+            <button class="pixel-btn" id="btn-admin-login">ACCEDER</button>
+        </div>
+
+        <div id="admin-tools-view" class="hidden" style="text-align: center;">
+            <button class="pixel-btn" id="btn-generate" style="width: 100%;">GENERAR LLAVE MÁGICA</button>
+            
+            <div id="keys-display" class="key-list">Conectando con el oráculo...</div>
+            
+            <button class="pixel-btn btn-small btn-danger" id="btn-clear-history">BORRAR HISTORIAL</button>
+            <br>
+            <button class="pixel-btn btn-small" id="btn-close-admin" style="margin-top: 10px;">CERRAR PANEL</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, ref, set, update, get, onValue, remove } from './firebase-config.js';
+        import { registrarPaso } from './telemetry.js';
+
+        const ADMIN_PASSWORD = "AMOR_FRIO";
+
+        // Elementos UI
+        const viewLogin = document.getElementById('view-login');
+        const loginMsg = document.getElementById('login-msg');
+        const adminPanel = document.getElementById('admin-panel');
+        const adminAuthView = document.getElementById('admin-auth-view');
+        const adminToolsView = document.getElementById('admin-tools-view');
+        const keysDisplay = document.getElementById('keys-display');
+
+        // =========================================
+        // 1. LÓGICA DE ENTRADA (USUARIO)
+        // =========================================
+        window.enterSystem = async () => {
+            const keyInput = document.getElementById('user-key-input').value.trim().toUpperCase();
+            
+            if (!keyInput) { 
+                loginMsg.textContent = "Por favor, escribe una llave."; 
+                return; 
+            }
+
+            loginMsg.textContent = "Verificando...";
+            loginMsg.style.color = "var(--c-text-light)";
+
+            const keyRef = ref(db, 'llaves/' + keyInput);
+            
+            try {
+                const snapshot = await get(keyRef);
+                const data = snapshot.val();
+                
+                // Si la llave existe y está activa (o usada, permitimos reentrada por ser dedicatoria)
+                if (data && (data.estado === "activa" || data.estado === "usada")) {
+                    
+                    // 1. Guardar la llave en el navegador para las siguientes fases
+                    localStorage.setItem('llave_acceso_dedicatoria', keyInput);
+                    
+                    // 2. Registrar en base de datos
+                    registrarPaso("Inicio: Portal Abierto"); // Esto guarda hora y fase
+
+                    // 3. Actualizar estado a usada si era nueva
+                    if(data.estado === "activa") {
+                        update(keyRef, { estado: "usada" });
+                    }
+                    
+                    loginMsg.style.color = "var(--c-text-highlight)";
+                    loginMsg.textContent = "¡Bienvenid@! El sueño comienza...";
+                    
+                    setTimeout(() => {
+                        window.location.href = 'fase2.html';
+                    }, 1500);
+
+                } else {
+                    loginMsg.style.color = "var(--c-accent)";
+                    loginMsg.textContent = "Llave incorrecta o inexistente.";
+                }
+
+            } catch (error) { 
+                console.error(error);
+                loginMsg.textContent = "Error de conexión con el sueño."; 
+            }
+        };
+
+        document.getElementById('btn-enter').addEventListener('click', window.enterSystem);
+
+        // =========================================
+        // 2. LÓGICA DE ADMIN (CREADOR)
+        // =========================================
+        document.getElementById('btn-open-admin').addEventListener('click', () => { adminPanel.style.display = 'block'; });
+        document.getElementById('btn-close-admin').addEventListener('click', () => { adminPanel.style.display = 'none'; });
+
+        document.getElementById('btn-admin-login').addEventListener('click', () => {
+            if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD) {
+                adminAuthView.classList.add('hidden');
+                adminToolsView.classList.remove('hidden');
+                startKeysListener();
+            } else { 
+                alert("Contraseña incorrecta."); 
+            }
+        });
+
+        document.getElementById('btn-generate').addEventListener('click', () => {
+            const newKey = Math.random().toString(36).substring(2, 6).toUpperCase();
+            set(ref(db, 'llaves/' + newKey), { 
+                estado: "activa", 
+                creada: new Date().toLocaleDateString(),
+                ultima_ubicacion: "Esperando..." 
+            });
+        });
+
+        document.getElementById('btn-clear-history').addEventListener('click', () => {
+            if(confirm("⚠ ¿Borrar TODO el historial de llaves?")) {
+                remove(ref(db, 'llaves'));
+            }
+        });
+
+        // =========================================
+        // 3. MONITOR EN TIEMPO REAL
+        // =========================================
+        function startKeysListener() {
+            onValue(ref(db, 'llaves'), (snapshot) => {
+                const data = snapshot.val();
+                keysDisplay.innerHTML = "";
+                
+                if (!data) { keysDisplay.innerHTML = "Sin registros."; return; }
+                
+                Object.keys(data).forEach(key => {
+                    const info = data[key];
+                    const icon = info.estado === 'activa' ? '✨' : '❤️';
+                    const color = info.estado === 'activa' ? '#ffd700' : '#ff6b81';
+                    
+                    // Aquí mostramos DÓNDE está y CUÁNDO fue
+                    keysDisplay.innerHTML += `
+                    <div class="key-item" style="color:${color}">
+                        ${icon} <b>${key}</b> [${info.estado}]
+                        <span class="key-meta">
+                            📍 ${info.ultima_ubicacion || 'Inicio'} <br>
+                            🕒 ${info.ultima_conexion || '---'}
+                        </span>
+                    </div>`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

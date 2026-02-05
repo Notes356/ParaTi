@@ -1,0 +1,312 @@
+/* =============================================================================
+   1. VARIABLES GLOBALES (EL ALMA DEL JUEGO)
+   ============================================================================= */
+:root {
+    /* Paleta Celestial "Void" - Corregida para degradado suave */
+    --c-void: #050510;         
+    --c-sky-top: #0b0b2b;      
+    --c-sky-bot: #3a7bd5;      /* Azul atmosférico */
+    
+    /* Colores de Energía */
+    --c-glow: #00f2ff;         /* Cian eléctrico */
+    --c-accent: #b33ce8;       /* Púrpura místico */
+    --c-danger: #ff0055;       
+    
+    /* Textos y Bordes */
+    --c-text: #e0e0ff;
+    --c-ui-bg: rgba(10, 10, 20, 0.9);
+    
+    /* Fuentes */
+    --f-title: 'Press Start 2P', cursive;
+    --f-text: 'VT323', monospace;
+}
+
+/* =============================================================================
+   2. RESET Y BASES
+   ============================================================================= */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background-color: var(--c-void);
+    font-family: var(--f-title);
+    color: var(--c-text);
+    user-select: none;
+}
+
+/* =============================================================================
+   3. EFECTOS DE ATMÓSFERA
+   ============================================================================= */
+.crt-scanlines {
+    position: fixed; inset: 0; z-index: 900; pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+    background-size: 100% 4px;
+}
+
+.vignette-layer {
+    position: fixed; inset: 0; z-index: 901; pointer-events: none;
+    background: radial-gradient(circle, transparent 40%, black 100%);
+    opacity: 0.6;
+}
+
+.flash-overlay {
+    position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background: white; opacity: 0; transition: opacity 0.2s;
+}
+
+.hidden { display: none !important; opacity: 0; }
+
+/* =============================================================================
+   4. PANTALLA DE INICIO
+   ============================================================================= */
+.overlay-full {
+    position: fixed; inset: 0; z-index: 1000;
+    background: #000;
+    display: flex; flex-direction: column; 
+    justify-content: center; align-items: center;
+    cursor: pointer;
+    transition: opacity 1s ease-out;
+}
+
+.intro-content h1 {
+    color: var(--c-glow); font-size: 30px; margin: 0;
+    text-shadow: 2px 2px 0 var(--c-accent);
+    animation: glitch 2s infinite;
+}
+
+.intro-content h2 {
+    font-family: var(--f-text); font-size: 24px; color: #888; margin-top: 10px;
+    letter-spacing: 4px;
+}
+
+.blink-text {
+    margin-top: 50px; font-size: 10px; color: #fff;
+    animation: blink 1s infinite;
+}
+
+/* =============================================================================
+   5. MUNDO DEL JUEGO
+   ============================================================================= */
+#game-world {
+    /* Degradado corregido para eliminar el "corte azul" */
+    background: linear-gradient(to bottom, #050510 0%, #0b0b2b 30%, #1a1a4a 70%, #3a7bd5 100%);
+}
+
+#game-viewport {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    overflow: hidden;
+}
+
+/* --- FONDO PARALLAX --- */
+#bg-layer-1 {
+    position: absolute; inset: 0; z-index: 0;
+    background: transparent; /* Dejamos que se vea el game-world */
+}
+
+#bg-layer-1::after {
+    content: ''; position: absolute; width: 2px; height: 2px;
+    background: white;
+    box-shadow: 
+        10vw 10vh #fff, 20vw 50vh #fff, 50vw 20vh #fff, 80vw 80vh #fff,
+        15vw 90vh #fff, 90vw 10vh #fff, 40vw 40vh #fff, 70vw 60vh #fff;
+    border-radius: 50%;
+    animation: twinkle 4s infinite alternate;
+}
+
+/* --- PISTA Y SUELO --- */
+#world-track {
+    position: absolute; bottom: 0; left: 0;
+    width: 4000px; height: 100%; z-index: 10;
+    will-change: transform;
+}
+
+.ground-line {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
+    background: linear-gradient(to top, var(--c-sky-bot), transparent);
+    border-bottom: 4px solid var(--c-glow); /* Suelo más visible */
+    box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+}
+
+.ground-line::before {
+    content: ''; position: absolute; bottom: 10px; left: 0; width: 100%; height: 2px;
+    background-image: linear-gradient(90deg, var(--c-glow) 50%, transparent 50%);
+    background-size: 150px 100%; opacity: 0.3;
+}
+
+/* --- CAMBIO: LAS CARTAS (Antes crystal-shard) --- */
+.interactive-zone {
+    position: absolute; bottom: 140px; /* Más arriba para que no toquen el suelo */
+    width: 60px; height: 140px;
+    display: flex; justify-content: center; align-items: center;
+}
+
+/* ESTO ES LO QUE ARREGLA LOS TRIÁNGULOS */
+.crystal-shard {
+    width: 50px; height: 70px; /* Forma de carta rectangular */
+    background: white;
+    border: 3px solid var(--c-glow);
+    border-radius: 6px; /* Bordes redondeados */
+    box-shadow: 0 0 20px var(--c-glow);
+    transform: rotate(0deg); /* SIN ROTACIÓN */
+    animation: floatItem 3s infinite ease-in-out;
+    display: flex; justify-content: center; align-items: center;
+}
+
+/* Dibujamos un corazón dentro de la carta */
+.crystal-shard::after {
+    content: "❤";
+    color: var(--c-accent);
+    font-size: 24px;
+}
+
+.zone-marker {
+    position: absolute; top: -50px;
+    color: var(--c-glow); font-size: 20px;
+    animation: bounceMarker 0.8s infinite alternate;
+    text-shadow: 0 0 5px var(--c-glow);
+    display: none;
+}
+
+/* --- NPC FINAL (YO) --- */
+#target-npc-container {
+    position: absolute; bottom: 120px; width: 100px;
+}
+#npc-sprite {
+    width: 100%; image-rendering: pixelated;
+    filter: drop-shadow(0 0 10px white); opacity: 0.9;
+}
+.glow-aura {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 30px;
+    background: radial-gradient(ellipse, white 0%, transparent 70%);
+    opacity: 0.4; animation: pulseAura 2s infinite;
+}
+
+/* --- JUGADOR (ELLA) - CAMBIO DE TAMAÑO --- */
+#player-container {
+    position: absolute; 
+    bottom: 110px; /* Ajustado al nuevo suelo */
+    left: 20%; 
+    width: 140px; /* ¡MÁS GRANDE! (Antes 105px) */
+    height: 140px;
+    z-index: 50;
+    transition: transform 0.1s;
+}
+
+#player-sprite {
+    width: 100%; height: 100%;
+    object-fit: contain; /* Asegura que se vea completa */
+    image-rendering: pixelated;
+    filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+}
+
+.anim-walking {
+    animation: walkBob 0.4s infinite alternate ease-in-out;
+}
+
+/* =============================================================================
+   6. INTERFAZ (HUD)
+   ============================================================================= */
+#ui-hud {
+    position: fixed; top: 0; left: 0; width: 100%; padding: 15px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    z-index: 100; pointer-events: none;
+}
+
+.hud-top-left {
+    background: rgba(0,0,0,0.6); border: 2px solid var(--c-text);
+    padding: 8px 12px; font-size: 10px; color: var(--c-text);
+}
+
+.hud-top-right { display: flex; flex-direction: column; align-items: flex-end; }
+.collection-counter { font-size: 12px; margin-bottom: 5px; color: var(--c-glow); }
+.progress-bar-frame { width: 120px; height: 12px; border: 2px solid #fff; background: #222; }
+#progress-fill { height: 100%; background: var(--c-accent); box-shadow: 0 0 10px var(--c-accent); transition: width 0.5s; }
+
+#interaction-layer {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
+    z-index: 200; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: flex-end;
+}
+
+#action-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--c-glow); border: 2px solid var(--c-glow);
+    font-family: var(--f-title); font-size: 16px;
+    padding: 15px 30px; cursor: pointer;
+    box-shadow: 0 0 20px var(--c-glow);
+    animation: pulseBtn 1s infinite;
+}
+
+#rpg-dialogue-box {
+    pointer-events: auto;
+    background: var(--c-ui-bg);
+    border-top: 4px solid var(--c-text); border-bottom: 4px solid var(--c-text);
+    padding: 20px; margin-bottom: 20px; min-height: 120px;
+    display: flex; flex-direction: column; width: 90%; align-self: center;
+    position: relative; top: -140px;
+}
+.dialogue-header { color: var(--c-accent); font-size: 12px; margin-bottom: 10px; }
+.dialogue-body { font-family: var(--f-text); font-size: 22px; line-height: 1.2; }
+.dialogue-footer { font-size: 10px; text-align: right; margin-top: 10px; animation: blink 1s infinite; }
+
+.touch-controls {
+    position: fixed; bottom: 20px; width: 100%;
+    display: flex; justify-content: space-between; padding: 0 30px;
+    pointer-events: auto;
+}
+.d-pad-btn {
+    width: 70px; height: 70px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
+    color: white; font-size: 24px;
+    display: flex; justify-content: center; align-items: center;
+    backdrop-filter: blur(4px);
+}
+.d-pad-btn:active { background: rgba(255, 255, 255, 0.4); transform: scale(0.95); }
+
+/* =============================================================================
+   7. PANTALLA FINAL
+   ============================================================================= */
+#ending-overlay {
+    position: fixed; inset: 0; background: black; z-index: 2000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; color: white;
+}
+.heart-pulse { font-size: 60px; color: var(--c-danger); animation: beat 1.5s infinite; }
+.fade-in-text { opacity: 0; animation: fadeIn 3s forwards; }
+.delay { animation-delay: 2s; }
+
+/* =============================================================================
+   8. ANIMACIONES CORREGIDAS
+   ============================================================================= */
+@keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-2px, 2px); }
+    40% { transform: translate(-2px, -2px); }
+    60% { transform: translate(2px, 2px); }
+    80% { transform: translate(2px, -2px); }
+    100% { transform: translate(0); }
+}
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes twinkle { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* CORREGIDO: Ya no rota 45 grados, solo flota verticalmente */
+@keyframes floatItem { 
+    0%, 100% { transform: translateY(0); } 
+    50% { transform: translateY(-15px); } 
+}
+
+@keyframes bounceMarker { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+@keyframes pulseAura { 0% { opacity: 0.2; transform: translateX(-50%) scale(1); } 50% { opacity: 0.5; transform: translateX(-50%) scale(1.2); } }
+@keyframes walkBob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+@keyframes pulseBtn { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
+@keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+@keyframes fadeIn { to { opacity: 1; } }
