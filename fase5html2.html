@@ -2,107 +2,176 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fase 6: El Horizonte de Eventos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#050510">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
+    <title>ECO V: Event Horizon</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     
+    <link rel="preload" as="image" href="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp">
+    <link rel="preload" as="image" href="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo%20normal.webp">
+
     <link rel="stylesheet" href="fase5css.css">
 </head>
-<body>
+<body data-state="booting">
 
-    <div id="start-screen" class="overlay-full">
-        <div class="intro-content">
-            <h1 class="glitch-text" data-text="FASE 5">FASE 6</h1>
+    <section id="start-screen" class="system-overlay">
+        <div class="intro-terminal">
+            <h1 class="glitch-title" data-text="Eco V">Eco V</h1>
+            <div class="terminal-loader">
+                <span class="cmd-line">> INICIANDO PROTOCOLO DE SINCRONIZACIÓN...</span>
+                <span class="cmd-line">> CARGANDO MEMORIAS... [OK]</span>
+            </div>
             <h2 class="sub-title">LA ÚLTIMA VERDAD</h2>
-            <p class="blink-text">[ TOCAR PARA COMENZAR ]</p>
+            <button id="btn-start" class="blink-cta">[ TOCAR PARA CONECTAR ]</button>
         </div>
+    </section>
+
+    <div class="fx-layer pointer-events-none">
+        <div class="vignette"></div>
+        <div class="scanlines"></div>
+        <div class="noise-grain"></div>
+        <div class="chromatic-aberration"></div>
+        <div class="flash-bang"></div>
     </div>
 
-    <div class="crt-scanlines"></div> <div class="vignette-layer"></div> <div class="flash-overlay"></div> <div id="ui-hud">
-        <div class="hud-top-left">
-            <span class="location-tag">UBICACIÓN: EL VACÍO</span>
-        </div>
-        <div class="hud-top-right">
-            <span class="collection-counter">FRAGMENTOS: <span id="fragment-count">0</span>/3</span>
-            <div class="progress-bar-frame">
-                <div id="progress-fill" style="width: 0%;"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="game-viewport">
+    <main id="game-viewport">
         
-        <div id="bg-layer-1" class="parallax-layer"></div>
-
-        <div id="bg-layer-2" class="parallax-layer">
-            </div>
+        <div id="bg-layer-deep" class="parallax-layer" data-speed="0.1"></div>
+        
+        <div id="bg-layer-mid" class="parallax-layer" data-speed="0.5"></div>
 
         <div id="world-track">
-            <div class="ground-line"></div>
             
-            <div class="interactive-zone monolith" id="monolith-0" style="left: 800px;">
-                <div class="crystal-shard"></div>
-                <div class="zone-marker">!</div>
+            <div class="floor-grid"></div>
+
+            <div class="interactive-zone monolith" id="monolith-0" style="left: 800px;" data-type="memory">
+                <div class="interaction-hint">!</div>
+                <div class="entity-visual card-container">
+                    <div class="card-inner">
+                        <div class="card-face card-front"></div>
+                        <div class="card-face card-back">❤</div>
+                    </div>
+                    <div class="energy-pillar"></div>
+                </div>
             </div>
 
-            <div class="interactive-zone monolith" id="monolith-1" style="left: 1800px;">
-                <div class="crystal-shard"></div>
-                <div class="zone-marker">!</div>
+            <div class="interactive-zone monolith" id="monolith-1" style="left: 1800px;" data-type="memory">
+                <div class="interaction-hint">!</div>
+                <div class="entity-visual card-container">
+                    <div class="card-inner">
+                        <div class="card-face card-front"></div>
+                        <div class="card-face card-back">❤</div>
+                    </div>
+                    <div class="energy-pillar"></div>
+                </div>
             </div>
 
-            <div class="interactive-zone monolith" id="monolith-2" style="left: 2800px;">
-                <div class="crystal-shard"></div>
-                <div class="zone-marker">!</div>
+            <div class="interactive-zone monolith" id="monolith-2" style="left: 2800px;" data-type="memory">
+                <div class="interaction-hint">!</div>
+                <div class="entity-visual card-container">
+                    <div class="card-inner">
+                        <div class="card-face card-front"></div>
+                        <div class="card-face card-back">❤</div>
+                    </div>
+                    <div class="energy-pillar"></div>
+                </div>
             </div>
 
-            <div id="target-npc-container" style="left: 3600px;">
-                <img id="npc-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo%20normal.webp" alt="Yo">
-                <div class="glow-aura"></div>
+            <div class="interactive-zone npc-target" id="target-npc-container" style="left: 3600px;" data-type="end">
+                <div class="entity-visual">
+                    <div class="sacred-geometry-aura"></div>
+                    <img id="npc-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo%20normal.webp" alt="Destino">
+                </div>
             </div>
         </div>
 
         <div id="player-container">
-            <img id="player-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp" alt="Ella">
+            <div class="player-aura"></div>
+            <img id="player-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp" alt="Jugador">
+            <div class="player-shadow"></div>
         </div>
 
         <div id="fg-fog-layer" class="parallax-layer"></div>
-    </div>
+    </main>
 
-    <div id="interaction-layer">
-        
-        <button id="action-btn" class="hidden">LEER MEMORIA</button>
+    <aside id="ui-hud">
+        <header class="hud-top">
+            <div class="hud-module location-data">
+                <span class="label">UBICACIÓN</span>
+                <span class="value glitch-text-small">EL VACÍO</span>
+            </div>
+            
+            <div class="hud-module collection-data">
+                <div class="fragment-tracker">
+                    <span class="label">MEMORIAS</span>
+                    <span class="counter"><span id="fragment-count">0</span>/3</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </header>
 
-        <div id="rpg-dialogue-box" class="hidden">
-            <div class="dialogue-header" id="dialogue-title">NOMBRE</div>
-            <div class="dialogue-body" id="dialogue-text">...</div>
-            <div class="dialogue-footer">TOCA PARA CONTINUAR ▼</div>
+        <div id="interaction-layer">
+            <button id="action-btn" class="action-trigger hidden">
+                <span class="btn-text">INICIAR LECTURA</span>
+                <span class="btn-border"></span>
+            </button>
         </div>
 
-        <div class="touch-controls">
-            <button id="btn-left" class="d-pad-btn">◀</button>
-            <button id="btn-right" class="d-pad-btn">▶</button>
+        <article id="rpg-dialogue-box" class="dialogue-system hidden">
+            <div class="dialogue-glass-panel">
+                <header class="dialogue-header">
+                    <span id="dialogue-title">SISTEMA</span>
+                    <div class="audio-wave-visualizer"></div>
+                </header>
+                <div class="dialogue-content">
+                    <p id="dialogue-text">...</p>
+                </div>
+                <footer class="dialogue-footer">
+                    <span class="blink-arrow">▼</span> TOCAR PARA CONTINUAR
+                </footer>
+            </div>
+        </article>
+
+        <nav class="touch-controls">
+            <button id="btn-left" class="d-pad-btn" aria-label="Mover Izquierda">
+                <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            </button>
+            <button id="btn-right" class="d-pad-btn" aria-label="Mover Derecha">
+                <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </button>
+        </nav>
+    </aside>
+
+    <section id="ending-overlay" class="hidden">
+        <div class="cinematic-content">
+            <div class="heart-pulse">❤</div>
+            <h2 class="fade-in-text">CONEXIÓN RESTABLECIDA</h2>
+            <p class="fade-in-text delay-1">Fin del Juego. Inicio de la Vida.</p>
         </div>
-    </div>
+    </section>
 
-    <div id="ending-overlay" class="hidden">
-        <div class="heart-pulse">❤</div>
-        <h2 class="fade-in-text">CONEXIÓN RESTABLECIDA</h2>
-        <p class="fade-in-text delay">Fin del Juego. Inicio de la Vida.</p>
+    <div id="audio-system">
+        <audio id="bg-music" loop preload="auto">
+            <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/9dadd84bb5327d566f58dd3f460590427c42e628/Faces%206%20ECO5/guilhermebernardes-near-danger-10375.ogg" type="audio/ogg">
+        </audio>
     </div>
-
-    <audio id="bg-music" loop>
-        <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/pixel-dreams-259187.ogg" type="audio/ogg">
-    </audio>
 
     <script type="module" src="fase5scrpit.js" defer></script>
-
     <script type="module">
         import { registrarPaso } from './telemetry.js';
-        registrarPaso("Fase 5.3: Horizonte Final");
+        // Check defensivo por si telemetry falla
+        if (typeof registrarPaso === 'function') {
+            registrarPaso("Eco V: El Horizonte de Eventos");
+        }
     </script>
-</body>
-</html>
 
 </body>
 </html>

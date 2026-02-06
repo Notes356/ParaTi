@@ -1,312 +1,543 @@
 /* =============================================================================
-   1. VARIABLES GLOBALES (EL ALMA DEL JUEGO)
+   CORE SYSTEM: VARIABLES & CONFIGURATION
+   "El ADN del Universo"
    ============================================================================= */
 :root {
-    /* Paleta Celestial "Void" - Corregida para degradado suave */
-    --c-void: #050510;         
-    --c-sky-top: #0b0b2b;      
-    --c-sky-bot: #3a7bd5;      /* Azul atmosférico */
+    /* --- PALETA DE COLORES (THE VOID THEME) --- */
+    --void-deep: #020205;
+    --void-light: #0b0b2b;
     
-    /* Colores de Energía */
-    --c-glow: #00f2ff;         /* Cian eléctrico */
-    --c-accent: #b33ce8;       /* Púrpura místico */
-    --c-danger: #ff0055;       
+    /* Energías */
+    --neon-cyan: #00f3ff;
+    --neon-magenta: #bc13fe;
+    --neon-plasma: #ffffff;
+    --system-error: #ff0055;
     
-    /* Textos y Bordes */
-    --c-text: #e0e0ff;
-    --c-ui-bg: rgba(10, 10, 20, 0.9);
+    /* UI Tokens */
+    --ui-glass: rgba(10, 15, 30, 0.65);
+    --ui-border: rgba(255, 255, 255, 0.15);
+    --ui-highlight: rgba(0, 243, 255, 0.3);
     
     /* Fuentes */
-    --f-title: 'Press Start 2P', cursive;
-    --f-text: 'VT323', monospace;
+    --font-header: 'Press Start 2P', cursive;
+    --font-body: 'VT323', monospace;
+    
+    /* Físicas de Animación (Game Feel) */
+    --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Z-Layers (Gestión de Profundidad) */
+    --z-bg-deep: 0;
+    --z-bg-mid: 10;
+    --z-world: 50;
+    --z-player: 60;
+    --z-fog: 70;
+    --z-ui: 100;
+    --z-overlay: 999;
 }
 
 /* =============================================================================
-   2. RESET Y BASES
+   1. RESET & BASE ENGINE
+   Configuración de alto rendimiento
    ============================================================================= */
-* {
+*, *::before, *::after {
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
 }
 
-body, html {
+html, body {
     margin: 0; padding: 0;
     width: 100%; height: 100%;
-    overflow: hidden;
-    background-color: var(--c-void);
-    font-family: var(--f-title);
-    color: var(--c-text);
-    user-select: none;
+    overflow: hidden; /* Crítico para evitar scroll del navegador */
+    background-color: var(--void-deep);
+    font-family: var(--font-header);
+    color: var(--neon-plasma);
+    user-select: none; /* Evita seleccionar texto al jugar */
+}
+
+/* Cursor personalizado */
+body {
+    cursor: crosshair;
 }
 
 /* =============================================================================
-   3. EFECTOS DE ATMÓSFERA
+   2. FX LAYER (POST-PROCESSING)
+   Efectos visuales globales aplicados sobre la cámara
    ============================================================================= */
-.crt-scanlines {
-    position: fixed; inset: 0; z-index: 900; pointer-events: none;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-    background-size: 100% 4px;
+.fx-layer {
+    position: fixed; inset: 0; z-index: var(--z-ui);
+    pointer-events: none; /* Deja pasar los clics */
+    mix-blend-mode: overlay;
 }
 
-.vignette-layer {
-    position: fixed; inset: 0; z-index: 901; pointer-events: none;
-    background: radial-gradient(circle, transparent 40%, black 100%);
-    opacity: 0.6;
+/* Líneas de escaneo CRT */
+.scanlines {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.3) 3px,
+        rgba(0, 0, 0, 0.3) 4px
+    );
+    z-index: 2;
+    opacity: 0.7;
 }
 
-.flash-overlay {
-    position: fixed; inset: 0; z-index: 999; pointer-events: none;
-    background: white; opacity: 0; transition: opacity 0.2s;
+/* Viñeta cinematográfica (Oscurece esquinas) */
+.vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at center, transparent 50%, #000 120%);
+    z-index: 3;
 }
 
-.hidden { display: none !important; opacity: 0; }
+/* Ruido estático (Grain) */
+.noise-grain {
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.15;
+    z-index: 1;
+    animation: grainShift 0.5s steps(3) infinite;
+}
+
+/* Aberración Cromática (Separación de canales RGB en los bordes) */
+.chromatic-aberration {
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.1), inset 0 0 50px rgba(0, 0, 255, 0.1);
+    mix-blend-mode: screen;
+    z-index: 4;
+}
+
+/* Flash Bang (Para transiciones o golpes) */
+.flash-bang {
+    position: fixed; inset: 0;
+    background: white; opacity: 0;
+    transition: opacity 0.1s ease-out;
+    z-index: 1000;
+}
 
 /* =============================================================================
-   4. PANTALLA DE INICIO
+   3. SYSTEM BIOS (START SCREEN)
+   Estilo Terminal Retro-Futurista
    ============================================================================= */
-.overlay-full {
-    position: fixed; inset: 0; z-index: 1000;
+.system-overlay {
+    position: fixed; inset: 0; z-index: var(--z-overlay);
     background: #000;
-    display: flex; flex-direction: column; 
-    justify-content: center; align-items: center;
+    display: flex; justify-content: center; align-items: center;
+    transition: opacity 0.8s ease-in-out, visibility 0.8s;
+}
+
+.intro-terminal {
+    text-align: center;
+    border: 1px solid var(--neon-cyan);
+    padding: 40px;
+    background: rgba(0, 20, 40, 0.9);
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+    max-width: 90%;
+}
+
+.glitch-title {
+    font-size: clamp(30px, 8vw, 60px);
+    color: var(--neon-plasma);
+    text-shadow: 3px 3px 0 var(--neon-magenta), -3px -3px 0 var(--neon-cyan);
+    position: relative;
+    animation: glitchMain 3s infinite alternate;
+}
+
+.sub-title {
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    color: #888;
+    margin-bottom: 30px;
+}
+
+.terminal-loader {
+    font-family: var(--font-body);
+    text-align: left;
+    margin: 20px 0;
+    color: var(--neon-cyan);
+    font-size: 1.2rem;
+}
+
+.cmd-line {
+    display: block;
+    opacity: 0;
+    animation: typeLine 0.5s forwards;
+}
+.cmd-line:nth-child(2) { animation-delay: 0.8s; }
+
+.blink-cta {
+    background: transparent; border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 15px 30px;
+    font-family: var(--font-header);
+    font-size: 14px;
     cursor: pointer;
-    transition: opacity 1s ease-out;
+    margin-top: 30px;
+    transition: all 0.3s;
+    animation: pulseGlow 1.5s infinite;
 }
 
-.intro-content h1 {
-    color: var(--c-glow); font-size: 30px; margin: 0;
-    text-shadow: 2px 2px 0 var(--c-accent);
-    animation: glitch 2s infinite;
-}
-
-.intro-content h2 {
-    font-family: var(--f-text); font-size: 24px; color: #888; margin-top: 10px;
-    letter-spacing: 4px;
-}
-
-.blink-text {
-    margin-top: 50px; font-size: 10px; color: #fff;
-    animation: blink 1s infinite;
+.blink-cta:hover {
+    background: var(--neon-cyan); color: #000;
+    box-shadow: 0 0 20px var(--neon-cyan);
 }
 
 /* =============================================================================
-   5. MUNDO DEL JUEGO
+   4. GAME ENGINE VIEWPORT
+   El escenario principal
    ============================================================================= */
-#game-world {
-    /* Degradado corregido para eliminar el "corte azul" */
-    background: linear-gradient(to bottom, #050510 0%, #0b0b2b 30%, #1a1a4a 70%, #3a7bd5 100%);
-}
-
 #game-viewport {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    position: absolute; inset: 0;
     overflow: hidden;
+    /* Degradado de cielo profundo */
+    background: linear-gradient(to bottom, #020205 0%, #050510 40%, #1a1a4a 80%, #2b3a60 100%);
 }
 
-/* --- FONDO PARALLAX --- */
-#bg-layer-1 {
-    position: absolute; inset: 0; z-index: 0;
-    background: transparent; /* Dejamos que se vea el game-world */
-}
-
-#bg-layer-1::after {
-    content: ''; position: absolute; width: 2px; height: 2px;
-    background: white;
-    box-shadow: 
-        10vw 10vh #fff, 20vw 50vh #fff, 50vw 20vh #fff, 80vw 80vh #fff,
-        15vw 90vh #fff, 90vw 10vh #fff, 40vw 40vh #fff, 70vw 60vh #fff;
-    border-radius: 50%;
-    animation: twinkle 4s infinite alternate;
-}
-
-/* --- PISTA Y SUELO --- */
-#world-track {
-    position: absolute; bottom: 0; left: 0;
-    width: 4000px; height: 100%; z-index: 10;
+.parallax-layer {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
     will-change: transform;
 }
 
-.ground-line {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 120px;
-    background: linear-gradient(to top, var(--c-sky-bot), transparent);
-    border-bottom: 4px solid var(--c-glow); /* Suelo más visible */
-    box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+/* --- ESTRELLAS GENERADAS CON CSS (Sin imágenes) --- */
+#bg-layer-deep::after {
+    content: " ";
+    position: absolute; top: 0; left: 0;
+    width: 2px; height: 2px;
+    background: transparent;
+    /* Esta sombra masiva crea cientos de estrellas */
+    box-shadow: 
+        10vw 10vh #fff, 20vw 50vh #fff, 50vw 20vh #fff, 80vw 80vh #fff,
+        15vw 90vh #fff, 90vw 10vh #fff, 40vw 40vh #fff, 70vw 60vh #fff,
+        1000px 200px #fff, 1500px 500px #fff, 2200px 100px #fff,
+        3000px 600px #fff, 3500px 300px #fff;
+    opacity: 0.8;
 }
 
-.ground-line::before {
-    content: ''; position: absolute; bottom: 10px; left: 0; width: 100%; height: 2px;
-    background-image: linear-gradient(90deg, var(--c-glow) 50%, transparent 50%);
-    background-size: 150px 100%; opacity: 0.3;
+/* Montañas lejanas o estructuras geométricas */
+#bg-layer-mid {
+    background-image: linear-gradient(to bottom, transparent 70%, #050510 100%);
+    z-index: var(--z-bg-mid);
 }
 
-/* --- CAMBIO: LAS CARTAS (Antes crystal-shard) --- */
+/* --- TRACK (SUELO) --- */
+#world-track {
+    position: absolute; bottom: 0; left: 0;
+    width: 4000px; height: 100%;
+    z-index: var(--z-world);
+    transform-style: preserve-3d; /* Activa el 3D para hijos */
+}
+
+/* Efecto Grid Synthwave en el suelo */
+.floor-grid {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 250px;
+    background: 
+        linear-gradient(transparent 20%, rgba(0, 243, 255, 0.1) 21%, transparent 22%),
+        linear-gradient(90deg, transparent 20%, rgba(0, 243, 255, 0.05) 21%, transparent 22%);
+    background-size: 100px 40px;
+    transform-origin: bottom;
+    transform: perspective(500px) rotateX(60deg) scale(2);
+    pointer-events: none;
+}
+
+/* =============================================================================
+   5. ENTITIES: MONOLITHS (LAS CARTAS 3D)
+   Aquí ocurre la magia de rotación CSS
+   ============================================================================= */
 .interactive-zone {
-    position: absolute; bottom: 140px; /* Más arriba para que no toquen el suelo */
-    width: 60px; height: 140px;
+    position: absolute; bottom: 160px;
+    width: 70px; height: 100px;
     display: flex; justify-content: center; align-items: center;
+    /* Flotación suave */
+    animation: floatEntity 4s ease-in-out infinite;
 }
 
-/* ESTO ES LO QUE ARREGLA LOS TRIÁNGULOS */
-.crystal-shard {
-    width: 50px; height: 70px; /* Forma de carta rectangular */
-    background: white;
-    border: 3px solid var(--c-glow);
-    border-radius: 6px; /* Bordes redondeados */
-    box-shadow: 0 0 20px var(--c-glow);
-    transform: rotate(0deg); /* SIN ROTACIÓN */
-    animation: floatItem 3s infinite ease-in-out;
-    display: flex; justify-content: center; align-items: center;
-}
-
-/* Dibujamos un corazón dentro de la carta */
-.crystal-shard::after {
-    content: "❤";
-    color: var(--c-accent);
+.interaction-hint {
+    position: absolute; top: -60px;
+    color: var(--neon-cyan);
     font-size: 24px;
+    text-shadow: 0 0 10px var(--neon-cyan);
+    animation: bounce 0.8s infinite alternate;
+    display: none; /* Se activa con JS */
 }
 
-.zone-marker {
-    position: absolute; top: -50px;
-    color: var(--c-glow); font-size: 20px;
-    animation: bounceMarker 0.8s infinite alternate;
-    text-shadow: 0 0 5px var(--c-glow);
-    display: none;
+/* Contenedor visual de la carta */
+.entity-visual.card-container {
+    width: 60px; height: 90px;
+    perspective: 600px; /* Profundidad 3D */
 }
 
-/* --- NPC FINAL (YO) --- */
-#target-npc-container {
-    position: absolute; bottom: 120px; width: 100px;
+.card-inner {
+    position: relative; width: 100%; height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d; /* Habilita caras delantera y trasera */
+    transform: rotateY(0deg); /* Estado inicial */
 }
+
+/* Si añadimos una clase 'flipped' con JS, gira */
+.interactive-zone.active .card-inner {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute; inset: 0;
+    backface-visibility: hidden; /* Oculta la cara de atrás */
+    border-radius: 8px;
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+.card-front {
+    background: rgba(5, 5, 10, 0.9);
+    background-image: linear-gradient(135deg, transparent 40%, rgba(0,243,255,0.4) 50%, transparent 60%);
+}
+
+.card-back {
+    background: #fff;
+    transform: rotateY(180deg);
+    display: flex; justify-content: center; align-items: center;
+    font-size: 30px;
+    color: var(--neon-magenta);
+}
+
+/* Pilar de luz debajo del objeto */
+.energy-pillar {
+    position: absolute; bottom: -80px; left: 50%;
+    width: 20px; height: 100px;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, var(--neon-cyan), transparent);
+    opacity: 0.3;
+    filter: blur(10px);
+    z-index: -1;
+}
+
+/* --- NPC TARGET (YO) --- */
+.npc-target { bottom: 130px; } /* Ajuste de altura */
+
+.sacred-geometry-aura {
+    position: absolute; top: 50%; left: 50%;
+    width: 140px; height: 140px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255,255,255,0.3);
+    border-radius: 50%;
+    animation: spinAura 10s linear infinite;
+}
+
+.sacred-geometry-aura::before {
+    content: ''; position: absolute; inset: 10px;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: spinAura 5s linear infinite reverse;
+}
+
 #npc-sprite {
-    width: 100%; image-rendering: pixelated;
-    filter: drop-shadow(0 0 10px white); opacity: 0.9;
-}
-.glow-aura {
-    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 120px; height: 30px;
-    background: radial-gradient(ellipse, white 0%, transparent 70%);
-    opacity: 0.4; animation: pulseAura 2s infinite;
+    width: 90px; 
+    filter: drop-shadow(0 0 15px white);
+    image-rendering: pixelated;
 }
 
-/* --- JUGADOR (ELLA) - CAMBIO DE TAMAÑO --- */
+/* =============================================================================
+   6. PLAYER (ELLA)
+   ============================================================================= */
 #player-container {
-    position: absolute; 
-    bottom: 110px; /* Ajustado al nuevo suelo */
-    left: 20%; 
-    width: 140px; /* ¡MÁS GRANDE! (Antes 105px) */
-    height: 140px;
-    z-index: 50;
-    transition: transform 0.1s;
+    position: absolute; bottom: 120px; left: 20%;
+    width: 130px; height: 130px;
+    z-index: var(--z-player);
+    transition: transform 0.1s linear;
 }
 
 #player-sprite {
-    width: 100%; height: 100%;
-    object-fit: contain; /* Asegura que se vea completa */
+    width: 100%; height: 100%; object-fit: contain;
     image-rendering: pixelated;
-    filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5));
+    filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.5));
 }
 
-.anim-walking {
-    animation: walkBob 0.4s infinite alternate ease-in-out;
+/* Sombra en el suelo */
+.player-shadow {
+    position: absolute; bottom: 5px; left: 35%; width: 30%; height: 10px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    filter: blur(4px);
+    transform: scale(1);
+    animation: shadowPulse 1s infinite alternate;
+}
+
+/* Animación de Caminar (Bobbing) */
+.anim-walking #player-sprite {
+    animation: walkBob 0.3s infinite alternate ease-in-out;
 }
 
 /* =============================================================================
-   6. INTERFAZ (HUD)
+   7. HUD & INTERFACE (Cyberpunk Glassmorphism)
    ============================================================================= */
 #ui-hud {
-    position: fixed; top: 0; left: 0; width: 100%; padding: 15px;
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: var(--z-ui);
+    padding: 20px;
+    display: flex; flex-direction: column; justify-content: space-between;
+}
+
+/* --- TOP PANEL --- */
+.hud-top {
     display: flex; justify-content: space-between; align-items: flex-start;
-    z-index: 100; pointer-events: none;
 }
 
-.hud-top-left {
-    background: rgba(0,0,0,0.6); border: 2px solid var(--c-text);
-    padding: 8px 12px; font-size: 10px; color: var(--c-text);
+.hud-module {
+    background: var(--ui-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--ui-border);
+    padding: 10px 15px;
+    border-radius: 4px;
+    /* Efecto de borde brillante "Tech" */
+    box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.2);
 }
 
-.hud-top-right { display: flex; flex-direction: column; align-items: flex-end; }
-.collection-counter { font-size: 12px; margin-bottom: 5px; color: var(--c-glow); }
-.progress-bar-frame { width: 120px; height: 12px; border: 2px solid #fff; background: #222; }
-#progress-fill { height: 100%; background: var(--c-accent); box-shadow: 0 0 10px var(--c-accent); transition: width 0.5s; }
+.location-data { border-left: 3px solid var(--neon-cyan); }
+.collection-data { border-right: 3px solid var(--neon-magenta); text-align: right; }
 
+.label {
+    display: block; font-size: 10px; color: #aaa; letter-spacing: 1px; margin-bottom: 4px;
+}
+.value { font-size: 14px; color: var(--neon-plasma); }
+
+/* Barra de progreso */
+.progress-bar-container {
+    width: 150px; height: 6px;
+    background: #222; margin-top: 5px;
+    position: relative; overflow: hidden;
+}
+
+#progress-fill {
+    height: 100%; background: var(--neon-magenta);
+    box-shadow: 0 0 10px var(--neon-magenta);
+    transition: width 0.4s var(--ease-elastic);
+}
+
+/* --- ACTION BUTTON --- */
 #interaction-layer {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
-    z-index: 200; pointer-events: none;
-    display: flex; flex-direction: column; justify-content: flex-end;
-}
-
-#action-btn {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    pointer-events: auto;
-    background: rgba(0, 0, 0, 0.9);
-    color: var(--c-glow); border: 2px solid var(--c-glow);
-    font-family: var(--f-title); font-size: 16px;
-    padding: 15px 30px; cursor: pointer;
-    box-shadow: 0 0 20px var(--c-glow);
-    animation: pulseBtn 1s infinite;
+    pointer-events: auto; /* IMPORTANTE: Habilitar clic */
 }
 
-#rpg-dialogue-box {
-    pointer-events: auto;
-    background: var(--c-ui-bg);
-    border-top: 4px solid var(--c-text); border-bottom: 4px solid var(--c-text);
-    padding: 20px; margin-bottom: 20px; min-height: 120px;
-    display: flex; flex-direction: column; width: 90%; align-self: center;
-    position: relative; top: -140px;
+.action-trigger {
+    background: rgba(0, 0, 0, 0.8);
+    border: none; outline: none;
+    cursor: pointer; position: relative;
+    padding: 20px 40px;
+    transition: transform 0.2s;
 }
-.dialogue-header { color: var(--c-accent); font-size: 12px; margin-bottom: 10px; }
-.dialogue-body { font-family: var(--f-text); font-size: 22px; line-height: 1.2; }
-.dialogue-footer { font-size: 10px; text-align: right; margin-top: 10px; animation: blink 1s infinite; }
 
+.btn-text {
+    font-family: var(--font-header); color: var(--neon-cyan); font-size: 16px;
+    z-index: 2; position: relative;
+    text-shadow: 0 0 5px var(--neon-cyan);
+}
+
+/* Borde animado del botón */
+.btn-border {
+    position: absolute; inset: 0;
+    border: 2px solid var(--neon-cyan);
+    clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
+}
+
+.action-trigger:active { transform: scale(0.95); }
+.action-trigger.hidden { display: none; }
+
+/* --- DIALOGUE SYSTEM (RPG STYLE) --- */
+.dialogue-system {
+    pointer-events: auto;
+    width: 95%; max-width: 600px;
+    margin: 0 auto 100px auto; /* Espacio para controles abajo */
+    perspective: 1000px;
+}
+
+.dialogue-glass-panel {
+    background: rgba(5, 5, 10, 0.95);
+    border: 1px solid #444;
+    border-top: 3px solid var(--neon-magenta);
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    transform: rotateX(10deg); /* Inclinación 3D para estilo */
+    animation: popIn 0.3s var(--ease-elastic);
+}
+
+.dialogue-header {
+    display: flex; justify-content: space-between; border-bottom: 1px solid #333;
+    padding-bottom: 10px; margin-bottom: 10px;
+    color: var(--neon-magenta); font-size: 12px;
+}
+
+.dialogue-content p {
+    font-family: var(--font-body); font-size: 24px; line-height: 1.2;
+    margin: 0; min-height: 80px;
+}
+
+.dialogue-footer {
+    text-align: right; font-size: 12px; color: #666; margin-top: 10px;
+}
+
+/* --- TOUCH CONTROLS --- */
 .touch-controls {
-    position: fixed; bottom: 20px; width: 100%;
-    display: flex; justify-content: space-between; padding: 0 30px;
+    position: absolute; bottom: 30px; width: 100%;
+    display: flex; justify-content: space-between; padding: 0 20px;
     pointer-events: auto;
 }
+
 .d-pad-btn {
-    width: 70px; height: 70px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%;
-    color: white; font-size: 24px;
+    width: 80px; height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    fill: white;
     display: flex; justify-content: center; align-items: center;
     backdrop-filter: blur(4px);
+    transition: background 0.1s;
 }
-.d-pad-btn:active { background: rgba(255, 255, 255, 0.4); transform: scale(0.95); }
+
+.d-pad-btn svg { width: 40px; height: 40px; opacity: 0.8; }
+.d-pad-btn:active { background: rgba(0, 243, 255, 0.2); border-color: var(--neon-cyan); }
 
 /* =============================================================================
-   7. PANTALLA FINAL
+   8. ENDING & UTILS
    ============================================================================= */
 #ending-overlay {
-    position: fixed; inset: 0; background: black; z-index: 2000;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; color: white;
+    position: fixed; inset: 0; z-index: 2000;
+    background: #000;
+    display: flex; justify-content: center; align-items: center;
+    text-align: center;
 }
-.heart-pulse { font-size: 60px; color: var(--c-danger); animation: beat 1.5s infinite; }
-.fade-in-text { opacity: 0; animation: fadeIn 3s forwards; }
-.delay { animation-delay: 2s; }
+
+.heart-pulse { font-size: 80px; color: var(--system-error); animation: heartBeat 1.2s infinite; }
+.fade-in-text { opacity: 0; animation: fadeIn 3s forwards 1s; }
+.delay-1 { animation-delay: 3s; font-family: var(--font-body); color: #888; font-size: 20px; }
+
+/* Utilidades */
+.hidden { display: none !important; }
+.pointer-events-none { pointer-events: none; }
 
 /* =============================================================================
-   8. ANIMACIONES CORREGIDAS
+   9. KEYFRAMES (ANIMACIONES)
    ============================================================================= */
-@keyframes glitch {
-    0% { transform: translate(0); }
-    20% { transform: translate(-2px, 2px); }
-    40% { transform: translate(-2px, -2px); }
-    60% { transform: translate(2px, 2px); }
-    80% { transform: translate(2px, -2px); }
-    100% { transform: translate(0); }
-}
-@keyframes blink { 50% { opacity: 0; } }
-@keyframes twinkle { 0% { opacity: 0.3; } 100% { opacity: 1; } }
-
-/* CORREGIDO: Ya no rota 45 grados, solo flota verticalmente */
-@keyframes floatItem { 
-    0%, 100% { transform: translateY(0); } 
-    50% { transform: translateY(-15px); } 
+@keyframes glitchMain {
+    0% { text-shadow: 3px 3px 0 var(--neon-magenta), -3px -3px 0 var(--neon-cyan); }
+    20% { text-shadow: -3px 3px 0 var(--neon-magenta), 3px -3px 0 var(--neon-cyan); transform: translate(2px, -2px); }
+    21% { transform: translate(0, 0); }
+    100% { text-shadow: 3px 3px 0 var(--neon-magenta), -3px -3px 0 var(--neon-cyan); }
 }
 
-@keyframes bounceMarker { from { transform: translateY(0); } to { transform: translateY(-10px); } }
-@keyframes pulseAura { 0% { opacity: 0.2; transform: translateX(-50%) scale(1); } 50% { opacity: 0.5; transform: translateX(-50%) scale(1.2); } }
-@keyframes walkBob { from { transform: translateY(0); } to { transform: translateY(-6px); } }
-@keyframes pulseBtn { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
-@keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+@keyframes typeLine { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulseGlow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes floatEntity { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+@keyframes spinAura { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes walkBob { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+@keyframes shadowPulse { from { transform: scale(1); opacity: 0.6; } to { transform: scale(0.8); opacity: 0.3; } }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+@keyframes popIn { from { transform: scale(0.8) rotateX(10deg); opacity: 0; } to { transform: scale(1) rotateX(10deg); opacity: 1; } }
+@keyframes heartBeat { 0% { transform: scale(1); } 15% { transform: scale(1.3); } 30% { transform: scale(1); } 45% { transform: scale(1.15); } 60% { transform: scale(1); } }
 @keyframes fadeIn { to { opacity: 1; } }
+@keyframes grainShift { 0%, 100% { transform: translate(0,0); } 10% { transform: translate(-5%, -10%); } 20% { transform: translate(-15%, 5%); } 30% { transform: translate(5%, -25%); } }

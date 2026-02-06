@@ -3,286 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fase 3: El Viaje Compartido [Optimized Core]</title>
+    <meta name="theme-color" content="#0a0a15">
+    <title>Eco II : Sincronización de Recuerdos</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     
     <style>
-        /* ====================================================
-           SUBFASE 1.1: ARQUITECTURA VISUAL (GPU READY)
-           ====================================================
-        */
+        /* =============================================================================
+           1.0 NÚCLEO VISUAL & VARIABLES DE ENTORNO
+           ============================================================================= */
         :root {
-            --c-bg-dark: #0a0a15;
-            --c-scanner-glow: #4deeea;
-            --c-text-terminal: #a8e6cf;
-            --c-accent-warn: #ff6b81;
-            --scan-line-color: rgba(77, 238, 234, 0.05);
-            --glass-panel: rgba(16, 20, 25, 0.95);
+            --c-void: #050510;
+            --c-holo: #00f3ff; /* Cian Holográfico */
+            --c-warn: #ff0055; /* Rojo Alerta */
+            --c-gold: #ffd700; /* Oro Memoria */
+            --c-grid: rgba(0, 243, 255, 0.05);
+            
+            --scan-speed: 2s;
+            --crt-flicker: 0.02;
         }
+
+        * { box-sizing: border-box; cursor: none; -webkit-tap-highlight-color: transparent; }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background: var(--c-bg-dark);
+            overflow: hidden; background: var(--c-void);
             font-family: 'VT323', monospace; user-select: none;
-            cursor: none; -webkit-tap-highlight-color: transparent;
         }
 
-        /* CAPAS VISUALES - Optimizadas con will-change */
-        #bg-layer-f3 {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        /* =============================================================================
+           2.0 CAPAS DE RENDERIZADO (BACKEND VISUAL)
+           ============================================================================= */
+        
+        /* 2.1 FONDO PARALLAX */
+        #layer-world {
+            position: fixed; top: -5%; left: -5%; width: 110%; height: 110%;
             background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/8708091f749f048e765d3bfcbcb8f201e7515a45/5718aa808e8431bed2f5b39795ed448c.jpg');
             background-size: cover; background-position: center;
-            z-index: 0; filter: brightness(0.5) contrast(1.1); /* Blur removido de estático, pesado */
-            transform: scale(1.02);
-            will-change: transform; /* Aviso a la GPU */
-        }
-
-        .fog-layer {
-            position: fixed; top: 0; left: 0; width: 200%; height: 100%;
-            background: linear-gradient(to right, transparent 0%, rgba(10, 10, 20, 0.5) 50%, transparent 100%);
-            z-index: 1; pointer-events: none; 
-            animation: fogMove 60s linear infinite; opacity: 0.5;
+            z-index: 0;
+            filter: brightness(0.4) contrast(1.2) sepia(0.3);
+            transition: transform 0.1s linear; /* Smooth parallax */
             will-change: transform;
         }
-        @keyframes fogMove { 0% { transform: translate3d(0,0,0); } 100% { transform: translate3d(-50%,0,0); } }
 
-        .crt-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; z-index: 100; pointer-events: none;
-            background: repeating-linear-gradient(0deg, var(--scan-line-color) 0px, var(--scan-line-color) 1px, transparent 1px, transparent 3px);
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        /* 2.2 NIEBLA VOLUMÉTRICA */
+        .fog-stream {
+            position: fixed; top: 0; left: 0; width: 200vw; height: 100vh;
+            background: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/main/fog-texture-opt.png'), /* Fallback o textura generada */
+                        linear-gradient(90deg, transparent 0%, rgba(0, 243, 255, 0.05) 50%, transparent 100%);
+            z-index: 1; pointer-events: none; opacity: 0.3;
+            animation: drift 60s linear infinite;
+        }
+        @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* 2.3 INTERFERENCIA CRT */
+        .crt-scanlines {
+            position: fixed; inset: 0; pointer-events: none; z-index: 100;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+            background-size: 100% 4px, 6px 100%;
         }
 
-        /* PERSONAJES */
-        #characters-layer {
+        /* 2.4 CANVAS DE PARTÍCULAS */
+        #dust-canvas {
+            position: fixed; inset: 0; z-index: 2; pointer-events: none;
+        }
+
+        /* =============================================================================
+           3.0 AVATARES & REACCIONES (ENTITY SYSTEM)
+           ============================================================================= */
+        #entity-layer {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 100%;
             z-index: 10; pointer-events: none;
         }
 
-        .char-wrapper {
-            position: absolute; bottom: 20px; display: flex; flex-direction: column; align-items: center;
-            will-change: transform; /* Optimización */
+        .avatar-unit {
+            position: absolute; bottom: 5vh; 
+            display: flex; flex-direction: column; align-items: center;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #char-ella { left: 10%; width: 100px; }
-        #char-yo { right: 10%; width: 100px; }
+        #unit-ella { left: 10%; width: 100px; }
+        #unit-yo { right: 10%; width: 100px; }
 
-        .pixel-char {
+        .pixel-sprite {
             width: 100%; height: auto; image-rendering: pixelated;
             filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
-            animation: floatChar 3s ease-in-out infinite;
+            animation: levitate 4s ease-in-out infinite;
         }
-        #char-yo .pixel-char { animation-delay: 0.5s; }
+        #unit-yo .pixel-sprite { animation-delay: 2s; }
 
-        @keyframes floatChar {
-            0%, 100% { transform: translate3d(0,0,0); }
-            50% { transform: translate3d(0,-6px,0); }
-        }
+        @keyframes levitate { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
-        /* REACCIONES */
-        .reaction-box {
-            position: absolute; top: -40px; width: 100%; text-align: center; height: 30px; pointer-events: none;
+        /* Emotes Flotantes */
+        .emote-popup {
+            position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+            font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--c-holo);
+            animation: emoteFloat 1.5s forwards;
         }
-        .emote {
-            display: inline-block; font-size: 24px; position: absolute; left: 50%;
-            /* Uso de translate3d para forzar aceleración hardware */
-            animation: popUpOut 1s forwards; will-change: transform, opacity;
-            text-shadow: 2px 2px 0 #000; filter: drop-shadow(0 0 5px var(--c-scanner-glow));
-        }
-        @keyframes popUpOut {
-            0% { opacity: 0; transform: translate3d(-50%, 10px, 0) scale(0.5); }
-            20% { opacity: 1; transform: translate3d(-50%, 0, 0) scale(1.2); }
-            80% { opacity: 1; transform: translate3d(-50%, -10px, 0) scale(1); }
-            100% { opacity: 0; transform: translate3d(-50%, -20px, 0) scale(0.8); }
+        @keyframes emoteFloat {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0); }
+            20% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -30px) scale(1); }
         }
 
-        /* SUBFASE 1.2: ESCÁNER OPTIMIZADO
-           Nota: Eliminamos 'transform: translate(-50%, -50%)' del CSS base 
-           para manejarlo puramente con JS y translate3d sin conflictos.
-        */
-        #scanner-cursor {
-            position: fixed; top: 0; left: 0; /* Posición inicial */
-            width: 80px; height: 80px;
-            /* Centramos visualmente usando margins negativos para no calcular offsets en JS */
-            margin-left: -40px; margin-top: -40px;
-            border: 2px dashed var(--c-scanner-glow); border-radius: 50%;
+        /* =============================================================================
+           4.0 TECNOLOGÍA DE ESCÁNER (RADAR SYSTEM)
+           ============================================================================= */
+        #scanner-hud {
+            position: fixed; top: 0; left: 0; width: 100px; height: 100px;
+            margin: -50px 0 0 -50px; /* Centrado */
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.3);
             pointer-events: none; z-index: 50;
-            box-shadow: 0 0 15px var(--c-scanner-glow), inset 0 0 10px var(--c-scanner-glow);
-            transition: width 0.2s, height 0.2s, border-color 0.2s; /* Quitamos transition de left/top/transform */
-            mix-blend-mode: screen;
             display: flex; justify-content: center; align-items: center;
-            will-change: transform; /* CRÍTICO para rendimiento */
+            will-change: transform;
+            mix-blend-mode: screen;
         }
-        #scanner-cursor::after { content: ''; width: 4px; height: 4px; background: var(--c-scanner-glow); border-radius: 50%; box-shadow: 0 0 10px #fff; }
+
+        /* Anillos de radar */
+        #scanner-hud::before {
+            content: ''; position: absolute; inset: -10px; border-radius: 50%;
+            border: 2px solid var(--c-holo);
+            border-left-color: transparent; border-right-color: transparent;
+            animation: spin 4s linear infinite; opacity: 0.5;
+        }
+        #scanner-hud::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(from 0deg, transparent 0%, var(--c-holo) 10%, transparent 40%);
+            animation: radarSweep 2s linear infinite;
+            opacity: 0.3;
+        }
+
+        #scanner-hud.locking {
+            border-color: #fff;
+            animation: lockOn 0.2s infinite;
+        }
+        #scanner-hud.locking::after { background: var(--c-gold); opacity: 0.6; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes radarSweep { 100% { transform: rotate(360deg); } }
+        @keyframes lockOn { 0% { box-shadow: 0 0 10px var(--c-gold); } 100% { box-shadow: 0 0 25px var(--c-gold), inset 0 0 15px var(--c-gold); } }
+
+        /* Puntos de interés invisibles (Detectores) */
+        .memory-node {
+            position: absolute; width: 100px; height: 100px; 
+            border-radius: 50%; z-index: 20; transform: translate(-50%, -50%);
+            /* border: 1px solid red; Debug only */
+        }
+
+        /* =============================================================================
+           5.0 INTERFAZ DE DATOS (TERMINAL & MODALS)
+           ============================================================================= */
         
-        #scanner-cursor.locking {
-            width: 100px; height: 100px; 
-            margin-left: -50px; margin-top: -50px; /* Ajuste por cambio de tamaño */
-            border-style: solid; border-color: #fff;
-            animation: lockPulse 0.3s infinite alternate;
+        /* Terminal Holográfica */
+        #holo-terminal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+            width: 90%; max-width: 600px;
+            background: rgba(10, 15, 20, 0.95);
+            border: 1px solid var(--c-holo);
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.15), inset 0 0 100px rgba(0,0,0,0.8);
+            padding: 2px; /* Frame gap */
+            z-index: 200; opacity: 0; pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            
+            /* Efecto Glitch Clip Path */
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
         }
-        @keyframes lockPulse { from { box-shadow: 0 0 20px var(--c-scanner-glow); } to { box-shadow: 0 0 50px #fff; } }
-
-        .signal-hotspot {
-            position: absolute; width: 120px; height: 120px; border-radius: 50%; z-index: 20; cursor: none;
-            /* border: 1px solid red;  Debug mode (desactivado) */
-        }
-
-        /* TERMINAL DE MEMORIAS */
-        #terminal-container {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-            width: 90%; max-width: 550px; background: var(--glass-panel);
-            border: 2px solid var(--c-scanner-glow);
-            box-shadow: 0 0 40px rgba(77, 238, 234, 0.2), inset 0 0 30px rgba(0,0,0,0.8);
-            padding: 25px; z-index: 200; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s, transform 0.3s;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        #terminal-container.active { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
-        .terminal-header {
-            width: 100%; font-family: 'Press Start 2P'; font-size: 10px; color: var(--c-scanner-glow);
-            margin-bottom: 15px; letter-spacing: 1px; text-transform: uppercase;
-            border-bottom: 1px solid var(--c-scanner-glow); padding-bottom: 8px;
-            display: flex; justify-content: space-between;
-        }
-        .img-frame {
-            width: 100%; height: 260px; background: #000; border: 2px solid #333;
-            margin-bottom: 15px; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; box-shadow: inset 0 0 10px #000;
-        }
-        #terminal-image { max-width: 100%; max-height: 100%; object-fit: contain; display: none; }
-
-        #terminal-text {
-            width: 100%; font-size: 1.5rem; color: var(--c-text-terminal);
-            line-height: 1.4; white-space: pre-wrap; min-height: 60px;
-            text-shadow: 0 0 5px rgba(168, 230, 207, 0.5); text-align: center;
-        }
-        .typing-cursor::after { content: '█'; animation: blinkCursor 0.8s infinite; color: var(--c-scanner-glow); }
-        @keyframes blinkCursor { 50% { opacity: 0; } }
-
-        .btn-action {
-            margin-top: 20px; background: transparent; border: 2px solid var(--c-scanner-glow);
-            color: var(--c-scanner-glow); font-family: 'Press Start 2P'; font-size: 10px;
-            padding: 12px 20px; cursor: none; width: 100%; text-transform: uppercase; transition: all 0.2s;
-        }
-        .btn-action:hover { background: var(--c-scanner-glow); color: #000; box-shadow: 0 0 15px var(--c-scanner-glow); }
-
-        /* VIDEO MODAL */
-        #video-modal {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 300;
-            display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.5s;
-        }
-        #video-modal.active { opacity: 1; pointer-events: auto; }
-        .retro-tv {
-            background: #111; padding: 20px; border-radius: 4px;
-            box-shadow: 0 0 60px rgba(77, 238, 234, 0.15); border: 4px solid #333; width: 95%; max-width: 640px;
-        }
-        .video-wrapper {
-            width: 100%; aspect-ratio: 16/9; background: #000; border: 2px solid #222;
-            position: relative; display: flex; justify-content: center; align-items: center;
-        }
-        #memory-video { width: 100%; height: 100%; object-fit: cover; }
-
-        /* BARRA DE PROGRESO */
-        #constellation-bar {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 150;
-            background: rgba(0,0,0,0.5); padding: 10px 25px; border-radius: 30px; border: 1px solid #333; 
-            /* Backdrop filter es pesado, usar con moderación o quitar en móviles low-end */
-            backdrop-filter: blur(2px);
-        }
-        .star-node {
-            width: 12px; height: 12px; background: #333; border-radius: 50%; transition: all 0.5s; box-shadow: 0 0 2px #000;
-        }
-        .star-node.active { background: var(--c-scanner-glow); transform: scale(1.5); box-shadow: 0 0 15px var(--c-scanner-glow), 0 0 30px #fff; }
-
-        /* FINAL */
-        #final-exit-btn {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-            background: var(--c-accent-warn); color: #000; border: 4px solid #fff;
-            font-family: 'Press Start 2P'; font-size: 14px; padding: 18px 50px; z-index: 150;
-            opacity: 0; pointer-events: none; transition: opacity 1s;
-            box-shadow: 0 0 30px var(--c-accent-warn); cursor: none;
+        #holo-terminal.active { 
+            opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; 
+            clip-path: polygon(0 10%, 5% 0, 95% 0, 100% 10%, 100% 90%, 95% 100%, 5% 100%, 0 90%);
         }
 
-        /* PANTALLA INICIO */
-        #start-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; background: #000; z-index: 999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer;
+        .terminal-inner {
+            border: 1px solid rgba(0,243,255,0.3); padding: 20px;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(0, 243, 255, 0.02) 3px);
         }
-        .blink-text { animation: blink 1s infinite; margin-top: 20px; font-size: 1.2rem; }
+
+        .term-header {
+            display: flex; justify-content: space-between; border-bottom: 2px solid var(--c-holo);
+            padding-bottom: 5px; margin-bottom: 15px; font-family: 'Press Start 2P'; font-size: 10px; color: var(--c-holo);
+        }
+
+        .term-visual {
+            width: 100%; height: 250px; background: #000; border: 1px solid #333; margin-bottom: 15px;
+            display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative;
+        }
+        .term-visual img { max-width: 100%; max-height: 100%; display: none; filter: sepia(0.2) contrast(1.2); }
+        .term-visual::after { /* Brillo pantalla */
+            content: ''; position: absolute; inset:0; background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.8) 100%); pointer-events: none;
+        }
+
+        #term-content {
+            font-size: 1.4rem; line-height: 1.5; color: #a8e6cf; min-height: 80px;
+            white-space: pre-wrap; text-shadow: 0 0 5px rgba(168, 230, 207, 0.4);
+        }
+
+        .btn-save {
+            width: 100%; background: transparent; border: 2px solid var(--c-holo); color: var(--c-holo);
+            padding: 15px; margin-top: 15px; font-family: 'Press Start 2P'; font-size: 11px;
+            cursor: none; text-transform: uppercase; transition: 0.3s;
+        }
+        .btn-save:hover { background: var(--c-holo); color: #000; box-shadow: 0 0 20px var(--c-holo); }
+
+        /* Video Feed (Estilo Monitor Seguridad) */
+        #video-feed {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 300;
+            display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.5s;
+        }
+        #video-feed.active { opacity: 1; pointer-events: auto; }
+        
+        .monitor-frame {
+            border: 10px solid #222; border-radius: 10px; padding: 5px; background: #111;
+            box-shadow: 0 0 50px rgba(255, 0, 85, 0.2);
+        }
+        video { display: block; max-width: 90vw; max-height: 70vh; border: 1px solid #333; }
+
+        /* =============================================================================
+           6.0 HUD GLOBAL (BARRA DE ESTADO)
+           ============================================================================= */
+        #status-bar {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px; z-index: 150;
+            background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 50px;
+            border: 1px solid #333; backdrop-filter: blur(4px);
+        }
+        .sync-node {
+            width: 10px; height: 10px; border-radius: 50%; background: #333; border: 1px solid #555;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .sync-node.active { background: var(--c-holo); box-shadow: 0 0 10px var(--c-holo); transform: scale(1.4); }
+
+        #warp-btn {
+            position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%);
+            background: var(--c-warn); color: #fff; border: none;
+            padding: 15px 40px; font-family: 'Press Start 2P'; font-size: 12px;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            opacity: 0; pointer-events: none; transition: opacity 1s, transform 0.3s;
+            box-shadow: 0 0 20px var(--c-warn); z-index: 160;
+        }
+        #warp-btn:hover { transform: translateX(-50%) scale(1.05); }
+
+        /* Boot Overlay */
+        #bios-boot {
+            position: fixed; inset: 0; background: #000; z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: var(--c-holo); cursor: pointer;
+        }
+        .boot-txt { font-family: 'Press Start 2P'; font-size: 14px; animation: blink 1s infinite; margin-top:20px; }
         @keyframes blink { 50% { opacity: 0; } }
-    /* Efecto de TV antigua y Viñeta */
-body::after {
-    content: " ";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%), 
-                radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.3) 100%);
-    background-size: 100% 3px, 100% 100%;
-    pointer-events: none;
-    z-index: 9999;
-}
 
     </style>
 </head>
 <body>
 
-    <div id="start-overlay" onclick="iniciarFase3()">
-        <h1 style="font-family:'Press Start 2P'; font-size:20px; color:var(--c-scanner-glow); margin-bottom:20px;">FASE 3</h1>
-        <h2 style="font-family:'VT323'; font-size:24px; color:#fff;">EL VIAJE COMPARTIDO</h2>
-        <div class="blink-text">[ TOCAR PARA SINTONIZAR ]</div>
+    <div id="bios-boot" onclick="SystemKernel.boot()">
+        <div style="font-size:40px; margin-bottom:10px;">📡</div>
+        <div style="font-family:'VT323'; font-size:24px; color:#fff;">SISTEMA ECO II DETECTADO</div>
+        <div class="boot-txt">[ TOCAR PARA INICIAR ESCANEO ]</div>
     </div>
 
-    <div id="bg-layer-f3"></div>
-    <div class="fog-layer"></div>
-    <div class="crt-overlay"></div>
+    <div id="layer-world"></div>
+    <div class="fog-stream"></div>
+    <canvas id="dust-canvas"></canvas>
+    <div class="crt-scanlines"></div>
 
-    <div id="characters-layer">
-        <div class="char-wrapper" id="char-ella">
-            <div class="reaction-box" id="react-ella"></div>
-            <img class="pixel-char" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e643d2de9ed5e76f941ee538f8fd07d351823ccb/Im%C3%A1genesA/Ella_pixelart.webp" alt="Ella">
+    <div id="entity-layer">
+        <div class="avatar-unit" id="unit-ella">
+            <div id="emote-anchor-ella"></div>
+            <img class="pixel-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e643d2de9ed5e76f941ee538f8fd07d351823ccb/Im%C3%A1genesA/Ella_pixelart.webp" alt="Ella">
         </div>
-        <div class="char-wrapper" id="char-yo">
-            <div class="reaction-box" id="react-yo"></div>
-            <img class="pixel-char" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo_normal_con_capucha.webp" alt="Yo">
+        <div class="avatar-unit" id="unit-yo">
+            <div id="emote-anchor-yo"></div>
+            <img class="pixel-sprite" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/43358b6d3df23269b45034ecec712fabccb46879/Fase5/Acto2/yo_normal_con_capucha.webp" alt="Yo">
         </div>
     </div>
 
-    <div id="scanner-cursor"></div>
-    <div id="hotspots-layer"></div>
-
-    <div id="terminal-container">
-        <div class="terminal-header"><span>>> SEÑAL RECIBIDA</span><span>CH: 98.4 FM</span></div>
-        <div class="img-frame">
-            <img id="terminal-image" src="" alt="Recuerdo Visual">
-        </div>
-        <div id="terminal-text"></div>
-        <button class="btn-action" onclick="cerrarTerminal()">GUARDAR EN EL CORAZÓN</button>
-    </div>
-
-    <div id="video-modal">
-        <div class="retro-tv">
-            <div class="terminal-header" style="color:var(--c-accent-warn); border-color:var(--c-accent-warn);">>> TRANSMISIÓN DE VIDEO</div>
-            <div class="video-wrapper">
-                <video id="memory-video" controls>
-                    <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/2988b6cba45755fca543b33ecc8fd457337c5fe1/Im%C3%A1genesA/Proyecto_02-02(2)_HD%20720p_MEDIUM_FR25.webm" type="video/webm">
-                </video>
+    <div id="scanner-hud"></div>
+    <div id="memory-field"></div> <div id="holo-terminal">
+        <div class="terminal-inner">
+            <div class="term-header">
+                <span>// MEMORY_DUMP_01</span>
+                <span>STATUS: DECRYPTED</span>
             </div>
-            <button class="btn-action" style="border-color:#555; color:#aaa;" onclick="cerrarVideo()">CERRAR CANAL</button>
+            <div class="term-visual">
+                <img id="term-img" src="" alt="Data Visual">
+            </div>
+            <div id="term-content"></div>
+            <button class="btn-save" onclick="DataInterface.closeTerminal()">GUARDAR FRAGMENTO</button>
         </div>
     </div>
 
-    <div id="constellation-bar"></div>
-    <button id="final-exit-btn" onclick="finalizarFase()">DESTINO ALCANZADO ➔</button>
+    <div id="video-feed">
+        <div class="monitor-frame">
+            <div class="term-header" style="color:#ff0055; border-color:#ff0055;">>> LIVE FEED RECIEVED</div>
+            <video id="vid-player" controls>
+                <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/2988b6cba45755fca543b33ecc8fd457337c5fe1/Im%C3%A1genesA/Proyecto_02-02(2)_HD%20720p_MEDIUM_FR25.webm" type="video/webm">
+            </video>
+            <button class="btn-save" style="border-color:#555; color:#999; margin-top:5px;" onclick="DataInterface.closeVideo()">CERRAR ENLACE</button>
+        </div>
+    </div>
 
-    <audio id="bg-music" loop>
+    <div id="status-bar"></div>
+    <button id="warp-btn" onclick="SystemKernel.warpJump()">INICIAR SALTO ➔</button>
+
+    <audio id="ambience-track" loop>
         <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/8708091f749f048e765d3bfcbcb8f201e7515a45/retro-love-471512.mp3" type="audio/mpeg">
     </audio>
 
     <script>
-        // ====================================================
-        // FASE 3: LÓGICA DE NEGOCIO Y DATOS
-        // ====================================================
-        const MEMORIAS = [
+        /**
+         * ============================================================================
+         * NUCLEO DE INGENIERÍA: PROYECTO ECO (MODO DIOS)
+         * ============================================================================
+         */
+
+        // [CONSTANTES] BASE DE DATOS DE MEMORIA INMUTABLE
+        const MEMORY_BANK = [
             { 
                 type: 'text', x: 20, y: 30, 
                 content: "A veces miro por la ventana y me pregunto si tú también estás mirando la misma luna.",
@@ -296,7 +332,7 @@ body::after {
             { type: 'video', x: 50, y: 50, content: "video_trigger" },
             { 
                 type: 'text', x: 30, y: 70, 
-                content: "No sé qué nos depara el destino, pero me alegra compartir este trayecto contigo.",
+                content: "No sé qué nos depara el destino, pero me alegra haber compartido este trayecto contigo.",
                 image: "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/2988b6cba45755fca543b33ecc8fd457337c5fe1/Im%C3%A1genesA/image-29.webp"
             },
             { 
@@ -306,267 +342,410 @@ body::after {
             }
         ];
 
-        // ====================================================
-        // FASE 4: MOTOR DE AUDIO
-        // ====================================================
-        const AudioSys = {
+        // [MODULO]: MOTOR DE AUDIO AVANZADO (PROCESAMIENTO ESPACIAL)
+        const AudioEngine = {
             ctx: null,
-            init() { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); },
-            playSFX(freq, type, duration = 0.15) {
-                if (!this.ctx) return;
-                const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
-                o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                g.gain.setValueAtTime(0.1, this.ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + duration);
-            }
-        };
+            masterGain: null,
+            sonarOsc: null,
+            lastPing: 0,
+            proximityFactor: 0, // 0 = lejos, 1 = encima
 
-        // ====================================================
-        // FASE 5: SISTEMA CENTRAL (OPTIMIZADO)
-        // ====================================================
-        
-        // 5.1 Estado Global
-        const UI = {
-            cursor: document.getElementById('scanner-cursor'),
-            terminal: document.getElementById('terminal-container'),
-            termText: document.getElementById('terminal-text'),
-            termImg: document.getElementById('terminal-image'),
-            videoModal: document.getElementById('video-modal'),
-            videoElement: document.getElementById('memory-video'),
-            music: document.getElementById('bg-music'),
-            finalBtn: document.getElementById('final-exit-btn')
-        };
+            init() {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AC();
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.connect(this.ctx.destination);
+                
+                // Fade in música
+                const music = document.getElementById('ambience-track');
+                music.volume = 0; music.play();
+                let v = 0;
+                const f = setInterval(() => { if(v<0.4){v+=0.02; music.volume=v;}else clearInterval(f); }, 200);
+            },
 
-        const Engine = {
-            mouseX: -100,
-            mouseY: -100,
-            scanning: false,
-            foundCount: 0,
-            typerInterval: null,
-            cachedHotspots: [], // Array para guardar posiciones y no leer el DOM constantemente
-            rafId: null // Request Animation Frame ID
-        };
+            // Sistema Sonar estilo "Geiger"
+            updateSonar(distancePercent) {
+                // distancePercent: 0 (encima) a 100 (lejos)
+                // Invertimos: 1 (cerca) a 0 (lejos)
+                const proximity = Math.max(0, 1 - (distancePercent / 40)); 
+                this.proximityFactor = proximity;
 
-        // 5.2 Inicialización
-        function iniciarFase3() {
-            document.getElementById('start-overlay').style.display = 'none';
-            AudioSys.init();
-            
-            // Fade Music
-            UI.music.volume = 0; 
-            UI.music.play().then(() => {
-                let vol = 0; 
-                const fade = setInterval(() => { if (vol < 0.5) { vol += 0.05; UI.music.volume = vol; } else clearInterval(fade); }, 200);
-            });
+                const now = this.ctx.currentTime;
+                // Velocidad del ping basada en proximidad
+                const pingInterval = 0.1 + (1 - proximity) * 1.5; 
 
-            crearHotspots(); 
-            crearEstrellasUI();
-            
-            // Calcular posiciones iniciales
-            recalcularGeometria();
-            window.addEventListener('resize', recalcularGeometria); // Recalcular solo al cambiar tamaño
-
-            Engine.scanning = true;
-
-            // EVENTOS DE ENTRADA (Solo actualizan variables, no renderizan)
-            document.addEventListener('mousemove', (e) => {
-                Engine.mouseX = e.clientX;
-                Engine.mouseY = e.clientY;
-            });
-            document.addEventListener('touchmove', (e) => { 
-                e.preventDefault(); 
-                Engine.mouseX = e.touches[0].clientX;
-                Engine.mouseY = e.touches[0].clientY;
-            }, {passive: false});
-
-            // INICIAR BUCLE DE RENDERIZADO
-            loop();
-
-            setTimeout(() => { triggerReaction('ella', '...'); triggerReaction('yo', '...'); }, 1000);
-        }
-
-        // 5.3 Gestión del DOM estático
-        function crearHotspots() {
-            const layer = document.getElementById('hotspots-layer');
-            MEMORIAS.forEach((mem, index) => {
-                const el = document.createElement('div'); el.className = 'signal-hotspot';
-                el.style.left = mem.x + '%'; el.style.top = mem.y + '%'; 
-                el.dataset.index = index;
-                el.id = `hotspot-${index}`; // ID para referencia rápida
-                layer.appendChild(el);
-            });
-        }
-
-        function crearEstrellasUI() {
-            const bar = document.getElementById('constellation-bar');
-            MEMORIAS.forEach(() => { const s = document.createElement('div'); s.className = 'star-node'; bar.appendChild(s); });
-        }
-
-        // 5.4 Cacheo de Geometría (Evita Reflows)
-        function recalcularGeometria() {
-            // Guardamos las coordenadas centrales y el radio de cada hotspot
-            const spots = document.querySelectorAll('.signal-hotspot:not(.found)');
-            Engine.cachedHotspots = Array.from(spots).map(el => {
-                const rect = el.getBoundingClientRect();
-                return {
-                    id: el.dataset.index,
-                    centerX: rect.left + rect.width / 2,
-                    centerY: rect.top + rect.height / 2,
-                    element: el,
-                    found: false
-                };
-            });
-        }
-
-        // 5.5 Bucle Principal de Renderizado (60 FPS)
-        function loop() {
-            // Mover Cursor usando GPU (Transform)
-            UI.cursor.style.transform = `translate3d(${Engine.mouseX}px, ${Engine.mouseY}px, 0)`;
-
-            // Lógica de Juego
-            if (Engine.scanning) {
-                checkCollisions();
-            }
-
-            // Solicitar siguiente frame
-            Engine.rafId = requestAnimationFrame(loop);
-        }
-
-        function checkCollisions() {
-            let locked = false;
-
-            // Iteramos sobre el array en memoria, NO sobre el DOM
-            Engine.cachedHotspots.forEach(spot => {
-                if(spot.found) return; // Ignorar ya encontrados
-
-                // Distancia Euclidiana simple
-                const dist = Math.hypot(Engine.mouseX - spot.centerX, Engine.mouseY - spot.centerY);
-
-                if (dist < 60) {
-                    locked = true; 
-                    if (!UI.cursor.classList.contains('locking')) UI.cursor.classList.add('locking');
-
-                    // Lógica del temporizador (gestionada en el elemento DOM original)
-                    if (!spot.element.timer) {
-                        AudioSys.playSFX(600, 'sine'); 
-                        spot.element.timer = setTimeout(() => activarMemoria(spot), 800);
-                        triggerReaction('yo', '?');
-                    }
-                } else { 
-                    if (spot.element.timer) { 
-                        clearTimeout(spot.element.timer); 
-                        spot.element.timer = null; 
-                    } 
+                if (proximity > 0.1 && (now - this.lastPing > pingInterval)) {
+                    this.ping(proximity);
+                    this.lastPing = now;
                 }
-            });
+            },
 
-            if (!locked && UI.cursor.classList.contains('locking')) {
-                UI.cursor.classList.remove('locking');
+            ping(intensity) {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Frecuencia sube con intensidad
+                osc.frequency.setValueAtTime(400 + (intensity * 800), this.ctx.currentTime);
+                osc.type = 'sine';
+                
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.1 * intensity, this.ctx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            },
+
+            playSFX(type) {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                if(type === 'lock') {
+                    osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.3);
+                    osc.type = 'sawtooth';
+                } else if(type === 'type') {
+                    osc.frequency.setValueAtTime(800 + Math.random()*200, this.ctx.currentTime);
+                    osc.type = 'square';
+                    gain.gain.value = 0.02;
+                }
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
             }
-        }
+        };
 
-        // ====================================================
-        // FASE 6: INTERACCIONES Y EVENTOS
-        // ====================================================
-        
-        function triggerReaction(char, emoji) {
-            const box = document.getElementById(char === 'ella' ? 'react-ella' : 'react-yo');
-            const el = document.createElement('span'); el.className = 'emote'; el.innerText = emoji;
-            box.appendChild(el);
-            AudioSys.playSFX(1000 + Math.random()*500, 'triangle', 0.1);
-            setTimeout(() => el.remove(), 1200);
-        }
+        // [MODULO]: RENDERIZADO DE PARTÍCULAS (POLVO CUÁNTICO)
+        const ParticleSystem = {
+            canvas: document.getElementById('dust-canvas'),
+            ctx: null,
+            particles: [],
+            width: 0, height: 0,
+            cursor: { x: -100, y: -100 },
 
-        function activarMemoria(spotData) {
-            Engine.scanning = false;
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                
+                for(let i=0; i<60; i++) this.particles.push(this.createParticle());
+                this.animate();
+            },
+
+            resize() {
+                this.width = this.canvas.width = window.innerWidth;
+                this.height = this.canvas.height = window.innerHeight;
+            },
+
+            createParticle() {
+                return {
+                    x: Math.random() * this.width,
+                    y: Math.random() * this.height,
+                    size: Math.random() * 2,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    speedY: (Math.random() - 0.5) * 0.5,
+                    alpha: Math.random() * 0.5
+                };
+            },
+
+            updateCursor(x, y) { this.cursor.x = x; this.cursor.y = y; },
+
+            animate() {
+                this.ctx.clearRect(0,0, this.width, this.height);
+                
+                this.particles.forEach(p => {
+                    // Movimiento base
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // Repulsión del escáner
+                    const dx = p.x - this.cursor.x;
+                    const dy = p.y - this.cursor.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if(dist < 100) {
+                        const force = (100 - dist) / 100;
+                        p.x += (dx / dist) * force * 2;
+                        p.y += (dy / dist) * force * 2;
+                        this.ctx.fillStyle = `rgba(0, 243, 255, ${p.alpha + 0.5})`; // Brillar al contacto
+                    } else {
+                        this.ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                    }
+
+                    // Wrap around
+                    if(p.x < 0) p.x = this.width;
+                    if(p.x > this.width) p.x = 0;
+                    if(p.y < 0) p.y = this.height;
+                    if(p.y > this.height) p.y = 0;
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                    this.ctx.fill();
+                });
+
+                requestAnimationFrame(() => this.animate());
+            }
+        };
+
+        // [MODULO]: INTERFAZ DE DATOS (TERMINAL)
+        const DataInterface = {
+            dom: {
+                terminal: document.getElementById('holo-terminal'),
+                img: document.getElementById('term-img'),
+                content: document.getElementById('term-content'),
+                videoModal: document.getElementById('video-feed'),
+                video: document.getElementById('vid-player')
+            },
+            typeInterval: null,
+
+            openTerminal(data) {
+                this.dom.terminal.classList.add('active');
+                
+                // Cargar imagen
+                if(data.image) {
+                    this.dom.img.src = data.image;
+                    this.dom.img.style.display = 'block';
+                } else {
+                    this.dom.img.style.display = 'none';
+                }
+
+                // Efecto de Tipeo "Decrypter"
+                this.dom.content.innerHTML = '';
+                let index = 0;
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@&%';
+                
+                clearInterval(this.typeInterval);
+                this.typeInterval = setInterval(() => {
+                    if(index < data.content.length) {
+                        // Añadir letra correcta
+                        const correct = data.content[index];
+                        // Simular glitch con caracteres aleatorios al final
+                        let glitch = '';
+                        /*for(let j=0; j<3; j++) glitch += chars[Math.floor(Math.random()*chars.length)];*/
+                        
+                        this.dom.content.innerHTML = data.content.substring(0, index) + correct + '<span style="color:#fff; background:var(--c-holo)">_</span>';
+                        index++;
+                        if(index%2===0) AudioEngine.playSFX('type');
+                    } else {
+                        clearInterval(this.typeInterval);
+                        this.dom.content.innerHTML = data.content; // Final limpio
+                    }
+                }, 30);
+            },
+
+            closeTerminal() {
+                clearInterval(this.typeInterval);
+                this.dom.terminal.classList.remove('active');
+                SystemKernel.completeMemory();
+            },
+
+            openVideo() {
+                this.dom.videoModal.classList.add('active');
+                document.getElementById('ambience-track').volume = 0.1;
+                this.dom.video.play();
+            },
             
-            // Marcar visualmente
-            spotData.element.classList.add('found');
-            
-            // Marcar en caché para no volver a comprobar
-            spotData.found = true; 
+            closeVideo() {
+                this.dom.videoModal.classList.remove('active');
+                this.dom.video.pause();
+                document.getElementById('ambience-track').volume = 0.4;
+                SystemKernel.completeMemory();
+            }
+        };
 
-            UI.cursor.style.opacity = '0';
-            AudioSys.playSFX(1200, 'square');
-            triggerReaction('ella', '!'); triggerReaction('yo', '!');
-            
-            const data = MEMORIAS[spotData.id];
-            data.type === 'video' ? abrirVideo() : abrirTerminal(data);
-        }
+        // [NUCLEO]: CONTROLADOR DEL SISTEMA (GAME LOOP)
+        const SystemKernel = {
+            state: {
+                scanning: false,
+                found: 0,
+                nodes: [], // {x, y, found, el}
+                mouse: { x: window.innerWidth/2, y: window.innerHeight/2 }
+            },
+            dom: {
+                scanner: document.getElementById('scanner-hud'),
+                world: document.getElementById('layer-world')
+            },
 
-        function abrirTerminal(data) {
-            UI.terminal.classList.add('active');
-            UI.termImg.src = data.image; UI.termImg.style.display = data.image ? 'block' : 'none';
-            UI.termText.innerHTML = ""; UI.termText.classList.add('typing-cursor');
-            
-            let i = 0;
-            Engine.typerInterval = setInterval(() => {
-                if (i < data.content.length) {
-                    UI.termText.innerHTML += data.content.charAt(i); i++;
-                    if(i % 3 === 0) AudioSys.playSFX(800 + Math.random()*200, 'sawtooth', 0.05);
-                } else { clearInterval(Engine.typerInterval); UI.termText.classList.remove('typing-cursor'); }
-            }, 50);
-        }
+            boot() {
+                // Secuencia de inicio
+                document.getElementById('bios-boot').style.display = 'none';
+                AudioEngine.init();
+                ParticleSystem.init();
+                
+                // Generar UI
+                this.spawnNodes();
+                this.generateStatusBar();
 
-        function cerrarTerminal() {
-            clearInterval(Engine.typerInterval);
-            UI.terminal.classList.remove('active');
-            triggerReaction('ella', '❤️'); triggerReaction('yo', '☺');
-            progresoGuardado();
-        }
+                this.state.scanning = true;
+                
+                // Input Listeners
+                document.addEventListener('mousemove', e => this.updateInput(e.clientX, e.clientY));
+                document.addEventListener('touchmove', e => {
+                    e.preventDefault();
+                    this.updateInput(e.touches[0].clientX, e.touches[0].clientY);
+                }, {passive:false});
 
-        function abrirVideo() {
-            UI.videoModal.classList.add('active');
-            UI.music.volume = 0.2; 
-            UI.videoElement.play();
-        }
+                // Iniciar Loop
+                this.gameLoop();
+                
+                // Trigger inicial
+                this.triggerEmote('unit-ella', '...');
+            },
 
-        function cerrarVideo() {
-            UI.videoModal.classList.remove('active');
-            UI.videoElement.pause();
-            UI.music.volume = 0.5; 
-            triggerReaction('ella', '📹'); triggerReaction('yo', '😯');
-            progresoGuardado();
-        }
+            spawnNodes() {
+                const container = document.getElementById('memory-field');
+                MEMORY_BANK.forEach((mem, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'memory-node';
+                    el.style.left = mem.x + '%';
+                    el.style.top = mem.y + '%';
+                    container.appendChild(el);
+                    
+                    // Guardar coordenadas pixel reales para cálculos rápidos
+                    const rect = el.getBoundingClientRect();
+                    this.state.nodes.push({
+                        id: i,
+                        cx: rect.left + rect.width/2,
+                        cy: rect.top + rect.height/2,
+                        found: false,
+                        el: el
+                    });
+                });
+            },
 
-        function progresoGuardado() {
-            document.querySelectorAll('.star-node')[Engine.foundCount].classList.add('active');
-            Engine.foundCount++; 
-            Engine.scanning = true; 
-            UI.cursor.style.opacity = '1';
-            
-            // IMPORTANTE: Recalcular caché por si algo se movió o para limpiar
-            recalcularGeometria();
+            generateStatusBar() {
+                const bar = document.getElementById('status-bar');
+                MEMORY_BANK.forEach(() => {
+                    const n = document.createElement('div');
+                    n.className = 'sync-node';
+                    bar.appendChild(n);
+                });
+            },
 
-            if (Engine.foundCount === MEMORIAS.length) {
+            updateInput(x, y) {
+                this.state.mouse.x = x;
+                this.state.mouse.y = y;
+                ParticleSystem.updateCursor(x, y);
+                
+                // Efecto Parallax en el fondo
+                const px = (window.innerWidth - x) / 50;
+                const py = (window.innerHeight - y) / 50;
+                this.dom.world.style.transform = `translate(${px}px, ${py}px)`;
+            },
+
+            gameLoop() {
+                if(this.state.scanning) {
+                    // Mover HUD Escáner
+                    this.dom.scanner.style.transform = `translate(${this.state.mouse.x}px, ${this.state.mouse.y}px)`;
+                    
+                    // Lógica de Detección
+                    let nearestDist = 9999;
+                    let targetNode = null;
+
+                    this.state.nodes.forEach(node => {
+                        if(node.found) return;
+                        
+                        const dist = Math.hypot(this.state.mouse.x - node.cx, this.state.mouse.y - node.cy);
+                        if(dist < nearestDist) nearestDist = dist;
+
+                        if(dist < 50) { // Radio de captura
+                            if(!this.dom.scanner.classList.contains('locking')) {
+                                this.startLock(node);
+                            }
+                            targetNode = node;
+                        }
+                    });
+
+                    // Si no estamos bloqueando un objetivo, actualizar sonar
+                    if(!targetNode) {
+                        this.cancelLock();
+                        // Convertir distancia px a porcentaje relativo de pantalla (aprox)
+                        const screenDiag = Math.hypot(window.innerWidth, window.innerHeight);
+                        const distPct = (nearestDist / screenDiag) * 100;
+                        AudioEngine.updateSonar(distPct);
+                    }
+                }
+                
+                requestAnimationFrame(() => this.gameLoop());
+            },
+
+            lockTimer: null,
+            startLock(node) {
+                this.dom.scanner.classList.add('locking');
+                this.triggerEmote('unit-yo', '?');
+                
+                this.lockTimer = setTimeout(() => {
+                    this.activateMemory(node);
+                }, 800); // Tiempo para escanear
+            },
+
+            cancelLock() {
+                this.dom.scanner.classList.remove('locking');
+                if(this.lockTimer) { clearTimeout(this.lockTimer); this.lockTimer = null; }
+            },
+
+            activateMemory(node) {
+                this.state.scanning = false; // Pausar escaneo
+                node.found = true;
+                this.dom.scanner.style.opacity = '0'; // Ocultar escáner
+                
+                AudioEngine.playSFX('lock');
+                this.triggerEmote('unit-ella', '!');
+                
+                const data = MEMORY_BANK[node.id];
+                if(data.type === 'video') DataInterface.openVideo();
+                else DataInterface.openTerminal(data);
+            },
+
+            completeMemory() {
+                // Actualizar UI
+                const dots = document.querySelectorAll('.sync-node');
+                dots[this.state.found].classList.add('active');
+                
+                this.state.found++;
+                this.state.scanning = true;
+                this.dom.scanner.style.opacity = '1';
+                
+                this.triggerEmote('unit-yo', '✨');
+                this.triggerEmote('unit-ella', '❤️');
+
+                if(this.state.found === MEMORY_BANK.length) {
+                    setTimeout(() => {
+                        const btn = document.getElementById('warp-btn');
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                    }, 1000);
+                }
+            },
+
+            triggerEmote(unitId, text) {
+                const parent = document.getElementById(unitId === 'unit-ella' ? 'emote-anchor-ella' : 'emote-anchor-yo').parentNode;
+                const el = document.createElement('div');
+                el.className = 'emote-popup';
+                el.innerText = text;
+                parent.appendChild(el);
+                setTimeout(() => el.remove(), 1500);
+            },
+
+            warpJump() {
+                AudioEngine.playSFX('lock'); // Sonido final
+                document.body.style.transition = "opacity 2s ease, filter 2s ease";
+                document.body.style.opacity = "0";
+                document.body.style.filter = "blur(20px) contrast(3)"; // Efecto Warp
+
                 setTimeout(() => {
-                    UI.finalBtn.style.opacity = '1'; UI.finalBtn.style.pointerEvents = 'auto';
-                    triggerReaction('ella', '✨'); triggerReaction('yo', '✨');
-                }, 1000);
+                    window.location.href = 'fase4.html';
+                }, 2000);
             }
-        }
-
-        function finalizarFase() {
-            AudioSys.playSFX(1500, 'square'); 
-            document.body.style.transition = "opacity 2s ease"; 
-            document.body.style.opacity = "0";
-            
-            let vol = UI.music.volume; 
-            const fade = setInterval(() => { if(vol > 0.05) { vol-=0.05; UI.music.volume = vol;} else clearInterval(fade); }, 200);
-            
-            setTimeout(() => {
-                cancelAnimationFrame(Engine.rafId); // Detener loop
-                (window.location.href = 'fase4.html');
-            }, 2000);
-        }
+        };
     </script>
         <script type="module">
         import { registrarPaso } from './telemetry.js';
-        registrarPaso("Fase 3: El Viaje");
+        registrarPaso("Fase 3: El Viaje [God Mode]");
     </script>
-</body>
-</html>
-
 </body>
 </html>

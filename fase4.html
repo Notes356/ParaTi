@@ -3,569 +3,720 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fase 4: RPG Odisea (Corregido)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#000000">
+    <title>Eco III: Odisea | Neural Link</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ==========================================================================
-           SECCIÓN CSS: VARIABLES GLOBALES Y RESET
-           ========================================================================== */
+        /* =============================================================================
+           FASE 1.0: EL MOTOR DE REALIDAD (CSS CORE)
+           ============================================================================= */
         :root {
-            --c-ui-border: #ffffff;
-            --c-ui-bg: rgba(20, 20, 30, 0.95); /* Fondo UI un poco más azulado */
-            --c-accent: #f1c40f; /* Amarillo dorado */
-            --c-danger: #e74c3c; /* Rojo peligro */
-            --c-text-retro: #d0d0ff;
+            --void-dark: #020205;
+            --ui-glass: rgba(10, 15, 25, 0.92);
+            --soul-gold: #ffd700;   
+            --soul-blue: #00f3ff;   
+            --soul-red: #ff003c;    
+            --crt-scan: rgba(0, 0, 0, 0.5);
+            --cursor-x: 50vw; /* VARIABLE PARA LINTERNA */
+            --cursor-y: 50vh; /* VARIABLE PARA LINTERNA */
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background: #050505;
-            font-family: 'VT323', monospace;
-            user-select: none; -webkit-tap-highlight-color: transparent;
+            overflow: hidden; background-color: var(--void-dark);
+            font-family: 'VT323', monospace; color: white;
+            cursor: crosshair; /* Cursor táctico */
         }
 
-        /* ==========================================================================
-           SECCIÓN CSS: EFECTOS DE PANTALLA (CRT Y PIXELACIÓN)
-           ========================================================================== */
-        .pixel-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 900;
-            /* Simulación de scanlines y rejilla de pixeles */
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 3px, 4px 100%;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
-            mix-blend-mode: overlay;
+        /* --- INYECCIÓN DE ESTEROIDES: ILUMINACIÓN DINÁMICA --- */
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: 5; pointer-events: none;
+            background: radial-gradient(circle 400px at var(--cursor-x) var(--cursor-y), transparent 0%, rgba(0,0,0,0.8) 100%);
+            mix-blend-mode: multiply;
         }
 
-        /* ==========================================================================
-           SECCIÓN CSS: MOTOR DEL MUNDO (SCROLL HORIZONTAL)
-           ========================================================================== */
-        #game-viewport {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            overflow: hidden;
+        /* --- INYECCIÓN DE ESTEROIDES: SCREEN SHAKE --- */
+        .shake-hard { animation: shake 0.25s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 
+            10%, 90% { transform: translate3d(-2px, 2px, 0); } 
+            20%, 80% { transform: translate3d(4px, -2px, 0); } 
+            30%, 50%, 70% { transform: translate3d(-6px, 4px, 0); } 
+            40%, 60% { transform: translate3d(6px, -4px, 0); } 
+        }
+
+        /* -------------------------------------------------------------------------
+           SUBFASE 1.1: EFECTOS DE POST-PROCESADO (ATMÓSFERA)
+           ------------------------------------------------------------------------- */
+        .fx-crt {
+            position: fixed; inset: 0; pointer-events: none; z-index: 999;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+            background-size: 100% 3px, 3px 100%;
+            animation: flicker 0.15s infinite;
+        }
+
+        .fx-vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 998;
+            background: radial-gradient(circle, transparent 50%, #000 130%);
+        }
+
+        .fx-noise {
+            position: fixed; inset: 0; pointer-events: none; z-index: 997; opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        @keyframes flicker { 0% { opacity: 0.95; } 100% { opacity: 1; } }
+
+        /* =============================================================================
+           FASE 2.0: ESCENARIO PARALLAX
+           ============================================================================= */
+        #reality-viewport {
+            position: absolute; inset: 0; overflow: hidden;
+            perspective: 1000px; 
+            transition: filter 0.2s; /* Más rápido para efectos de golpe */
         }
 
         #world-track {
-            display: flex; height: 100%; width: 400%; /* 4 Mundos en total */
-            transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); /* Movimiento muy suave */
+            display: flex; height: 100%; width: 400vw;
             will-change: transform;
+            transition: transform 1.8s cubic-bezier(0.19, 1, 0.22, 1);
         }
 
-        .biome {
-            width: 100vw; height: 100vh; position: relative;
+        .biome-sector {
+            width: 100vw; height: 100%; position: relative;
             background-size: cover; background-position: center;
-            overflow: hidden; image-rendering: pixelated; /* Fuerza look pixelado en fondos */
+            image-rendering: pixelated; flex-shrink: 0; overflow: hidden;
         }
 
-        /* FONDOS CON FILTROS AMBIENTALES */
-        #biome-1 { background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-33.webp'); filter: contrast(1.1) saturate(0.8) brightness(0.9); }
-        #biome-2 { background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-35.webp'); filter: contrast(1.3) hue-rotate(5deg); }
-        #biome-3 { background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-39.webp'); filter: sepia(0.5) brightness(0.8) contrast(1.2); }
-        #biome-4 { background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-38.webp'); filter: grayscale(0.9) contrast(1.5) brightness(0.5) hue-rotate(280deg); }
-
-        /* PARTÍCULAS AMBIENTALES */
-        .particle-container { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 10; }
-        .particle { position: absolute; animation: floatPart var(--duration, 4s) infinite linear; opacity: 0.6; will-change: transform; }
-        @keyframes floatPart { 
-            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity:0; } 
-            20% { opacity:1; } 
-            100% { transform: translateY(-150px) rotate(var(--rot, 360deg)) scale(1.2); opacity:0; } 
+        /* CONFIGURACIÓN DE BIOMAS (CON ABERRACIÓN CROMÁTICA AÑADIDA) */
+        #sector-alpha { 
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-33.webp');
+            filter: contrast(1.2) saturate(0.8) brightness(0.6);
+        }
+        #sector-beta { 
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-35.webp');
+            filter: hue-rotate(15deg) contrast(1.3) brightness(0.7);
+        }
+        #sector-gamma { 
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-39.webp');
+            filter: sepia(0.8) brightness(0.6) contrast(1.4);
+        }
+        #sector-delta { 
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/image-38.webp');
+            filter: grayscale(1) brightness(0.4) contrast(1.5);
         }
 
-        /* ==========================================================================
-           SECCIÓN CSS: ENTIDADES (JUGADOR, FANTASMA, ITEMS)
-           ========================================================================== */
-        
-        /* Sprite del Jugador */
-        #player-char {
-            position: absolute; bottom: 18%; left: 50%; transform: translateX(-50%);
-            width: 140px; /* Un poco más grande para presencia */
-            z-index: 50; transition: filter 0.3s;
-            image-rendering: pixelated;
-            filter: drop-shadow(0 15px 10px rgba(0,0,0,0.7));
-        }
-        .anim-idle { animation: breathe 2.5s infinite ease-in-out; }
-        .anim-walk { animation: walkJump 0.5s infinite alternate ease-in-out; }
-        
-        @keyframes breathe { 0%, 100% { transform: translateX(-50%) scaleY(1); } 50% { transform: translateX(-50%) scaleY(1.03); } }
-        @keyframes walkJump { from { bottom: 18%; transform: translateX(-50%) rotate(-1deg); } to { bottom: 21%; transform: translateX(-50%) rotate(1deg); } }
-
-        /* Sprite del Fantasma ("Yo") */
-        #ghost-char {
-            position: absolute; bottom: 22%; right: 18%; width: 130px;
-            opacity: 0; transition: opacity 3s ease-in; 
-            filter: grayscale(1) brightness(1.5) blur(1px) drop-shadow(0 0 15px white);
-            pointer-events: none; image-rendering: pixelated; mix-blend-mode: hard-light;
-            animation: ghostFloat 4s infinite ease-in-out alternate;
-        }
-        @keyframes ghostFloat { from { transform: translateY(0); } to { transform: translateY(-20px); } }
-
-        /* Ítems Interactivos (Burbujas) - POSICIÓN CORREGIDA */
-        .item-orb {
-            position: absolute; 
-            bottom: 45%; /* CORRECCIÓN: Subido para que no lo tape el personaje */
-            width: 64px; height: 64px;
-            background: rgba(255,255,255,0.1); border: 3px solid rgba(255,255,255,0.8); border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; font-size: 32px;
-            cursor: pointer; animation: floatOrb 2.5s infinite ease-in-out both;
-            box-shadow: 0 0 25px rgba(255,255,255,0.3), inset 0 0 15px rgba(255,255,255,0.2);
-            z-index: 40; /* Debajo del jugador pero accesible */
-            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
-        }
-        /* Desfase de animación para que no se muevan igual */
-        .item-orb:nth-child(2) { animation-delay: 0.5s; }
-        .item-orb:nth-child(3) { animation-delay: 1s; }
-
-        .item-orb:active { transform: scale(0.95) !important; background: rgba(255,255,255,0.3); }
-        .item-orb.collected { animation: collectPop 0.6s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
-        
-        @keyframes floatOrb { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        @keyframes collectPop { 
-            0% { transform: scale(1); opacity:1; filter: brightness(1); } 
-            50% { transform: scale(1.8); opacity:0.8; filter: brightness(2); } 
-            100% { transform: scale(0); opacity:0; } 
+        /* CAPA DE PARTÍCULAS (CANVAS) */
+        .particle-canvas {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            pointer-events: none; z-index: 10;
         }
 
-        /* ==========================================================================
-           SECCIÓN CSS: INTERFAZ DE USUARIO (HUD, DIÁLOGO, CONTROLES)
-           ========================================================================== */
-        #ui-layer { 
-            position: fixed; top:0; left:0; width:100%; height:100%; 
-            pointer-events:none; z-index: 950; /* Por encima de casi todo */
+        /* =============================================================================
+           FASE 3.0: ENTIDADES
+           ============================================================================= */
+        #traveler-entity {
+            position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
+            width: 150px; z-index: 500; pointer-events: none;
+            image-rendering: pixelated; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.9));
+            transition: filter 0.5s;
+        }
+        .anim-breathe { animation: breathe 3s infinite ease-in-out; }
+        .anim-warp { animation: warpWalk 0.3s infinite steps(2); filter: blur(2px) hue-rotate(90deg) !important; }
+
+        @keyframes breathe { 0%, 100% { transform: translateX(-50%) scaleY(1); } 50% { transform: translateX(-50%) scaleY(1.04); } }
+        @keyframes warpWalk { 0% { transform: translateX(-52%) translateY(0) skewX(-10deg); } 50% { transform: translateX(-48%) translateY(-5px) skewX(10deg); } }
+
+        #echo-entity {
+            position: absolute; bottom: 22%; right: 20%; width: 130px;
+            opacity: 0; filter: blur(2px) grayscale(1) brightness(2);
+            mix-blend-mode: overlay; pointer-events: none;
+            transition: opacity 2s;
         }
 
-        /* Barra Superior (HUD) */
-        .top-bar {
-            position: absolute; top: 20px; left: 20px; right: 20px;
-            display: flex; justify-content: space-between;
-        }
-        .retro-box {
-            background: var(--c-ui-bg); border: 3px solid var(--c-ui-border);
-            padding: 10px 15px; font-family: 'Press Start 2P'; font-size: 11px; color: var(--c-text-retro);
-            box-shadow: 4px 4px 0 rgba(0,0,0,0.6); text-transform: uppercase;
-        }
-
-        /* Caja de Diálogo */
-        #dialogue-panel {
-            position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 650px; min-height: 110px;
-            background: var(--c-ui-bg); border: 4px solid var(--c-ui-border);
-            padding: 18px; display: none; pointer-events: auto;
-            color: white; font-size: 1.5rem; line-height: 1.3; text-shadow: 1px 1px 2px black;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-        .cursor-blink::after { content: '█'; animation: blink 0.8s infinite; color: var(--c-accent); margin-left: 5px;}
-
-        /* Controles (Botones inferiores) */
-        .controls-area {
-            position: absolute; bottom: 25px; width: 100%;
-            display: flex; justify-content: space-between; padding: 0 25px;
-            box-sizing: border-box; pointer-events: none;
-        }
-        .btn-move {
-            pointer-events: auto; /* Los botones sí reciben clicks */
-            width: 75px; height: 75px; background: #ddd; border: 4px solid #444;
-            border-radius: 12px; display: flex; justify-content: center; align-items: center;
-            font-size: 30px; color: #333; opacity: 0.8; cursor: pointer;
-            box-shadow: 0 6px 0 #222, 0 10px 20px rgba(0,0,0,0.4); transition: all 0.1s;
-        }
-        .btn-move:active { transform: translateY(6px); box-shadow: 0 0px 0 #222, 0 5px 10px rgba(0,0,0,0.4); opacity: 1; background: #fff; }
-        .btn-move:disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
-
-        /* ==========================================================================
-           SECCIÓN CSS: MINIJUEGO FINAL (COLAPSO) Y PANTALLAS
-           ========================================================================== */
-        #collapse-system {
-            position: fixed; top:0; left:0; width:100%; height:100%; z-index: 980;
-            background: rgba(15, 5, 5, 0.96); display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        #heart-btn {
-            font-size: 130px; color: var(--c-danger); filter: drop-shadow(0 0 30px var(--c-danger));
-            animation: pulseCritical 0.6s infinite; cursor: pointer; user-select: none;
+        /* ARTEFACTOS (ESTERIODES: BRILLO NEÓN) */
+        .artifact-node {
+            position: absolute; bottom: 45%; width: 70px; height: 70px;
+            background: rgba(0, 0, 0, 0.4); border: 2px solid var(--soul-blue);
+            box-shadow: 0 0 20px var(--soul-blue); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; cursor: pointer; z-index: 100;
+            backdrop-filter: blur(4px); animation: floatArtifact 4s infinite ease-in-out;
             transition: transform 0.1s;
         }
-        #heart-btn:active { transform: scale(0.85); filter: brightness(1.5); }
-        
-        .hp-bar-frame { width: 300px; height: 24px; border: 3px solid #777; background: #222; margin-top: 30px; padding: 3px; }
-        .hp-fill { width: 50%; height: 100%; background: linear-gradient(to right, var(--c-danger), #ff5555); transition: width 0.1s linear; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-        
-        .glitch-txt {
-            position: absolute; font-family: 'Press Start 2P'; color: var(--c-danger);
-            font-size: 14px; animation: glitchAnim 0.25s infinite steps(2); pointer-events: none;
-            text-shadow: 2px 2px 0 black;
+        .artifact-node:hover { transform: scale(1.1); background: var(--soul-blue); color: black; }
+        .artifact-node:active { transform: scale(0.9); border-color: var(--soul-gold); box-shadow: 0 0 30px var(--soul-gold); }
+        .artifact-node.extracted { animation: extractSequence 0.5s forwards; pointer-events: none; }
+
+        @keyframes floatArtifact { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes extractSequence { 
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.5); filter: brightness(3); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
         }
 
-        /* Animaciones Auxiliares */
-        @keyframes blink { 50% { opacity: 0; } }
-        @keyframes pulseCritical { 0% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 0.9; } }
-        @keyframes glitchAnim { 0% { transform: translate(0); clip-path: inset(0 0 0 0); } 25% { transform: translate(-3px, 2px); clip-path: inset(10% 0 40% 0); } 50% { transform: translate(3px, -2px); clip-path: inset(40% 0 10% 0); } 75% { transform: translate(-3px, -2px); clip-path: inset(20% 0 20% 0); } }
+        /* =============================================================================
+           FASE 4.0: HUD
+           ============================================================================= */
+        #head-up-display { position: fixed; inset: 0; pointer-events: none; z-index: 800; }
 
-        /* Pantalla de Inicio */
-        #intro-screen {
-            position: fixed; inset: 0; background: #000; z-index: 1000;
+        .status-module {
+            position: absolute; top: 20px;
+            background: var(--ui-glass); border: 1px solid var(--ui-border);
+            padding: 8px 16px; font-family: 'Orbitron', sans-serif; font-size: 10px; color: var(--soul-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            text-shadow: 0 0 5px var(--soul-blue); /* NEON TEXT */
+        }
+        #mod-loc { left: 20px; border-left: 3px solid var(--soul-gold); }
+        #mod-sync { right: 20px; border-right: 3px solid var(--soul-purple); }
+
+        #neural-console {
+            position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 650px; background: rgba(5, 8, 10, 0.96);
+            border: 1px solid #333; border-top: 2px solid var(--soul-gold);
+            padding: 20px; display: none; pointer-events: auto;
+            font-family: 'VT323', monospace; font-size: 1.5rem; color: #a8e6cf;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        .control-deck {
+            position: absolute; bottom: 30px; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 30px;
+        }
+        .nav-btn {
+            pointer-events: auto; width: 70px; height: 70px;
+            background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 8px; color: white; font-size: 24px; transition: 0.2s;
+            backdrop-filter: blur(5px);
+        }
+        .nav-btn:disabled { opacity: 0.1; pointer-events: none; }
+        .nav-btn:active { background: var(--soul-gold); color: black; box-shadow: 0 0 20px var(--soul-gold); }
+
+        /* =============================================================================
+           FASE 5.0: SISTEMA DE COLAPSO (REPARADO Y MEJORADO)
+           ============================================================================= */
+        #critical-failure-layer {
+            position: fixed; inset: 0; z-index: 2000;
+            background: #000; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        #heart-reactor {
+            font-size: 100px; color: var(--soul-red);
+            filter: drop-shadow(0 0 30px var(--soul-red));
+            animation: criticalPulse 0.4s infinite; cursor: pointer; pointer-events: auto;
+            transition: transform 0.05s;
+            user-select: none;
+        }
+        #heart-reactor:active { transform: scale(0.85); filter: brightness(3); }
+
+        /* PARTICULAS DE EXPLOSIÓN CSS */
+        .spark {
+            position: absolute; width: 6px; height: 6px; background: var(--soul-gold);
+            border-radius: 50%; pointer-events: none;
+            animation: sparkFly 0.6s ease-out forwards;
+        }
+        @keyframes sparkFly { 
+            0% { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        .integrity-bar {
+            width: 300px; height: 14px; background: #111; margin-top: 40px;
+            position: relative; overflow: hidden; border: 2px solid #555;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        #integrity-fill {
+            width: 50%; height: 100%; background: linear-gradient(90deg, var(--soul-red), #ff6b6b);
+            box-shadow: 0 0 20px var(--soul-red);
+            transition: width 0.1s linear;
+        }
+
+        /* BOTÓN DE CONTINUAR / SALVACIÓN */
+        #continue-btn {
+            margin-top: 30px;
+            padding: 20px 40px;
+            background: black;
+            border: 3px solid var(--soul-gold);
+            color: var(--soul-gold);
+            font-family: 'Orbitron';
+            font-size: 16px; font-weight: bold;
+            letter-spacing: 3px;
+            cursor: pointer;
+            pointer-events: auto;
+            display: none; /* Oculto inicialmente */
+            animation: fadeInBtn 1s forwards;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+            text-transform: uppercase;
+        }
+        #continue-btn:hover { background: var(--soul-gold); color: black; box-shadow: 0 0 50px var(--soul-gold); }
+
+        .glitch-text-node {
+            position: absolute; font-family: 'Press Start 2P'; font-size: 12px; color: var(--soul-red);
+            background: #000; padding: 4px 8px; pointer-events: none;
+            border: 1px solid red;
+        }
+
+        @keyframes criticalPulse { 0% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0.8; transform: scale(1); } }
+        @keyframes fadeInBtn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* PANTALLA DE CARGA */
+        #boot-sequence {
+            position: fixed; inset: 0; background: #000; z-index: 10000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; cursor: pointer;
+            color: var(--soul-blue); font-family: 'Orbitron'; cursor: pointer;
         }
-    /* Efecto de TV antigua y Viñeta */
-body::after {
-    content: " ";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%), 
-                radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,0.3) 100%);
-    background-size: 100% 3px, 100% 100%;
-    pointer-events: none;
-    z-index: 9999;
-}
-
     </style>
 </head>
 <body>
 
-    <div class="pixel-overlay"></div>
+    <div class="fx-crt"></div>
+    <div class="fx-vignette"></div>
+    <div class="fx-noise"></div>
 
-    <div id="intro-screen" onclick="Game.start()">
-        <h1 style="font-family:'Press Start 2P'; color:var(--c-accent); font-size:18px; margin-bottom:25px; text-shadow: 3px 3px 0 #555;">FASE 4</h1>
-        <p style="font-family:'VT323'; font-size: 28px; color: var(--c-text-retro);">REALIDADES CRUZADAS</p>
-        <div style="margin-top:50px; font-size: 16px; animation:blink 1s infinite; font-family:'Press Start 2P'; color:#aaa;">[ CLIC PARA INICIAR ]</div>
+    <div id="boot-sequence" onclick="SystemKernel.boot()">
+        <h1 style="font-size: 24px; letter-spacing: 5px; margin-bottom: 20px; text-shadow: 0 0 10px var(--soul-blue);">ECO III</h1>
+        <div style="font-family: 'VT323'; font-size: 18px; color: #666;">INICIANDO SINCRONIZACIÓN NEURONAL...</div>
+        <div style="margin-top: 40px; border: 1px solid var(--soul-blue); padding: 10px 20px; font-size: 12px; animation: flicker 1s infinite;">[ CONECTAR ]</div>
     </div>
 
-    <div id="game-viewport">
+    <div id="reality-viewport">
         <div id="world-track">
             
-            <div class="biome" id="biome-1">
-                <div class="particle-container" id="fx-1"></div>
-                <div class="item-orb" style="left:20%;" onclick="Game.interact(0, 'Mis guardias son eternas... estudio para salvar vidas, pero a veces olvido vivir la mía.', 0)">🩺</div>
-                <div class="item-orb" style="left:50%;" onclick="Game.interact(1, 'Libros, exámenes, presión. Mi futuro depende de esto.', 0)">📚</div>
-                <div class="item-orb" style="left:80%;" onclick="Game.interact(2, 'Amo mi carrera, pero... ¿hay espacio para algo más?', 0)">💊</div>
+            <div class="biome-sector" id="sector-alpha">
+                <canvas class="particle-canvas" id="canvas-alpha"></canvas>
+                <div class="artifact-node" style="left: 20%;" onclick="SystemKernel.analyze(0, 'Mis sesiones son eternas... estudio para salvar vidas, pero a veces olvido vivir la mía.', 0)">🩺</div>
+                <div class="artifact-node" style="left: 50%;" onclick="SystemKernel.analyze(1, 'Libros, exámenes, presión. Mi futuro depende de esto.', 0)">📚</div>
+                <div class="artifact-node" style="left: 80%;" onclick="SystemKernel.analyze(2, 'Amo mi carrera, pero... ¿hay espacio para algo más?', 0)">💊</div>
             </div>
 
-            <div class="biome" id="biome-2">
-                <div class="particle-container" id="fx-2"></div>
-                <div class="item-orb" style="left:25%;" onclick="Game.interact(3, 'Mis amigos me dan la libertad que necesito.', 1)">🍻</div>
-                <div class="item-orb" style="left:55%;" onclick="Game.interact(4, 'Me da miedo perder mi independencia por una relación.', 1)">🏙️</div>
-                <div class="item-orb" style="left:85%;" onclick="Game.interact(5, 'Aquí soy yo misma. Sin etiquetas.', 1)">🎵</div>
+            <div class="biome-sector" id="sector-beta">
+                <canvas class="particle-canvas" id="canvas-beta"></canvas>
+                <div class="artifact-node" style="left: 25%;" onclick="SystemKernel.analyze(3, 'Mis amigos me dan la libertad que necesito.', 1)">🍻</div>
+                <div class="artifact-node" style="left: 55%;" onclick="SystemKernel.analyze(4, 'Me da miedo perder mi independencia por una relación.', 1)">🏙️</div>
+                <div class="artifact-node" style="left: 85%;" onclick="SystemKernel.analyze(5, 'Aquí soy yo misma. Sin etiquetas.', 1)">🎵</div>
             </div>
 
-            <div class="biome" id="biome-3">
-                <div class="particle-container" id="fx-3"></div>
-                <img id="ghost-char" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e643d2de9ed5e76f941ee538f8fd07d351823ccb/Im%C3%A1genesA/Yo_pixelart.webp">
-                <div class="item-orb" style="left:30%; border-color:var(--c-accent);" onclick="Game.interact(6, 'Te quería... te quería tanto. Eras mi lugar seguro.', 2)">🌹</div>
-                <div class="item-orb" style="left:60%; border-color:var(--c-accent);" onclick="Game.interact(7, 'Pero mis dudas eran más fuertes que mi corazón.', 2)">💭</div>
-                <div class="item-orb" style="left:90%; border-color:var(--c-accent);" onclick="Game.interact(8, '¿Fue la distancia? ¿Fue el dinero? ¿O fui yo?', 2)">✉️</div>
+            <div class="biome-sector" id="sector-gamma">
+                <canvas class="particle-canvas" id="canvas-gamma"></canvas>
+                <img id="echo-entity" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e643d2de9ed5e76f941ee538f8fd07d351823ccb/Im%C3%A1genesA/Yo_pixelart.webp">
+                <div class="artifact-node" style="left: 30%; border-color: var(--soul-gold);" onclick="SystemKernel.analyze(6, 'Te quería... te quería tanto. Eras mi lugar seguro.', 2)">🌹</div>
+                <div class="artifact-node" style="left: 60%; border-color: var(--soul-gold);" onclick="SystemKernel.analyze(7, 'Pero mis dudas eran más fuertes que mi corazón.', 2)">💭</div>
+                <div class="artifact-node" style="left: 90%; border-color: var(--soul-gold);" onclick="SystemKernel.analyze(8, '¿Fue la distancia? ¿Fue el dinero? ¿O fui yo?', 2)">✉️</div>
             </div>
 
-            <div class="biome" id="biome-4">
-                <div class="particle-container" id="fx-4"></div>
-                <div style="position:absolute; top:40%; width:100%; text-align:center; color:var(--c-danger); font-family:'Press Start 2P'; font-size:16px; text-shadow:2px 2px black; animation: glitchAnim 0.5s infinite steps(3);">ERROR CRÍTICO DE VÍNCULO</div>
+            <div class="biome-sector" id="sector-delta">
+                <div style="position: absolute; top: 45%; width: 100%; text-align: center; font-family: 'Press Start 2P'; color: var(--soul-red); font-size: 14px; text-shadow: 2px 2px black;">
+                    ERROR CRÍTICO: VÍNCULO ROTO
+                </div>
             </div>
 
         </div>
 
-        <img id="player-char" class="anim-idle" src="">
+        <img id="traveler-entity" class="anim-breathe" src="">
     </div>
 
-    <div id="ui-layer">
-        <div class="top-bar">
-            <div class="retro-box">LUGAR: <span id="loc-txt" style="color:var(--c-accent)">FACULTAD</span></div>
-            <div class="retro-box">PROGRESO: <span id="prog-txt">0/3</span></div>
-        </div>
+    <div id="head-up-display">
+        <div class="status-module" id="mod-loc">SEC: FACULTAD</div>
+        <div class="status-module" id="mod-sync">SYNC: 0/3</div>
 
-        <div id="dialogue-panel"></div>
+        <div id="neural-console"></div>
 
-        <div class="controls-area">
-            <button id="btn-left" class="btn-move" disabled onclick="Game.move(-1)">◀</button>
-            <button id="btn-right" class="btn-move" disabled onclick="Game.move(1)">▶</button>
-        </div>
-    </div>
-
-    <div id="collapse-system">
-        <h2 style="color:var(--c-text-retro); font-family:'Press Start 2P'; font-size:14px; margin-bottom:40px; text-align:center; line-height: 1.5;">SISTEMA FALLANDO<br><span style="color:var(--c-danger)">SOSTÉN EL VÍNCULO</span></h2>
-        <div id="heart-btn" onclick="FinalGame.pump()">❤</div>
-        <div class="hp-bar-frame">
-            <div class="hp-fill" id="hp-val"></div>
+        <div class="control-deck">
+            <button id="nav-prev" class="nav-btn" disabled onclick="SystemKernel.warp(-1)">◀</button>
+            <button id="nav-next" class="nav-btn" disabled onclick="SystemKernel.warp(1)">▶</button>
         </div>
     </div>
 
-    <audio id="bg-ost" loop>
+    <div id="critical-failure-layer">
+        <h2 style="font-family: 'Orbitron'; color: #888; font-size: 12px; margin-bottom: 50px; text-shadow: 0 0 10px red;">SISTEMA COMPROMETIDO // MANTENER LATIDO</h2>
+        
+        <div id="heart-reactor" onmousedown="CollapseEngine.beat(event)" ontouchstart="CollapseEngine.beat(event)">❤</div>
+        
+        <div class="integrity-bar">
+            <div id="integrity-fill"></div>
+        </div>
+        
+        <div style="font-family: 'VT323'; color: #666; margin-top: 10px; font-size: 14px; text-shadow: 0 0 5px red;">(HAZ CLIC RÁPIDO PARA LLENAR LA BARRA)</div>
+
+        <button id="continue-btn" onclick="window.location.href='fase5.html'">CONTINUAR >></button>
+    </div>
+
+    <audio id="ambience-stream" loop>
         <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/4d63dd7f2a5b05f6bb427b8af684b1f44ed41824/Fase4/pixel-dreams-259187.ogg" type="audio/ogg">
     </audio>
 
-       <script>
-        // === CONFIGURACIÓN DE SPRITES ===
-        const SPRITE_START_PHASE_1_2 = "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_12-01-14-752.webp";
-        const SPRITE_LATER_PHASE_3_4 = "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp";
+    <script>
+        /**
+         * ============================================================================
+         * ARCHITECT KERNEL V.6.0 [TITAN EDITION]
+         * ============================================================================
+         */
 
-        // === MOTOR DE AUDIO ===
-        const AudioFx = {
+        const ASSETS = {
+            avatarNormal: "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_12-01-14-752.webp",
+            avatarGlitch: "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/b32ef0a23b35cffc8d5362ac0476cdb1bed418de/Fase4/Picsart_26-02-03_11-41-34-090.webp"
+        };
+
+        // --- SISTEMA DE ILUMINACIÓN DINÁMICA (LINTERNA) ---
+        document.addEventListener('mousemove', (e) => {
+            document.documentElement.style.setProperty('--cursor-x', e.clientX + 'px');
+            document.documentElement.style.setProperty('--cursor-y', e.clientY + 'px');
+        });
+
+        // --- SISTEMA DE AUDIO (SYNTH + NOISE UPGRADE) ---
+        const SoundSynth = {
             ctx: null,
-            init() { const AC = window.AudioContext || window.webkitAudioContext; this.ctx = new AC(); },
-            beep(f, t, v=0.1, d=0.1) {
+            init() { 
+                const AC = window.AudioContext || window.webkitAudioContext; 
+                this.ctx = new AC(); 
+            },
+            tone(freq, type, duration) {
                 if(!this.ctx) return;
-                const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
-                o.type = t; o.frequency.setValueAtTime(f, this.ctx.currentTime);
-                g.gain.setValueAtTime(v, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
-                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + d);
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type; 
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                // Pitch drop effect para más impacto
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.5, this.ctx.currentTime + duration);
+                
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            },
+            noiseBurst() { // Nuevo sonido sucio para glitches
+                if(!this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * 0.1;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.value = 0.1;
+                noise.connect(gain); gain.connect(this.ctx.destination);
+                noise.start();
             }
         };
 
-        // === MOTOR DEL JUEGO PRINCIPAL (RPG) ===
-        const Game = {
-            world: 0,
-            items: [0, 0, 0],
-            totalItems: 3,
-            isMoving: false,
-            isReading: false, // <--- NUEVO: Bandera para bloquear acciones mientras se lee
-
-            start() {
-                document.getElementById('intro-screen').style.display = 'none';
-                AudioFx.init();
-                const ost = document.getElementById('bg-ost');
-                ost.volume = 0.4; ost.play();
-                
-                document.getElementById('player-char').src = SPRITE_START_PHASE_1_2;
-                
-                this.spawnParticles(0);
-                this.updateUI();
+        // --- SISTEMA DE VFX (VISUAL EFFECTS) ---
+        const VFX = {
+            shake() {
+                document.body.classList.remove('shake-hard');
+                void document.body.offsetWidth; // Trigger reflow
+                document.body.classList.add('shake-hard');
             },
-
-            move(dir) {
-                // Si se está moviendo O si se está leyendo, no permitir movimiento
-                if(this.isMoving || this.isReading) return;
-                
-                const next = this.world + dir;
-                
-                if(next >= 0 && next <= 3) {
-                    this.isMoving = true;
-                    this.world = next;
-                    AudioFx.beep(300, 'triangle', 0.2);
-                    
-                    const charImg = document.getElementById('player-char');
-                    
-                    if(this.world >= 2) { 
-                        if(charImg.src !== SPRITE_LATER_PHASE_3_4) charImg.src = SPRITE_LATER_PHASE_3_4;
-                    } else {
-                        if(charImg.src !== SPRITE_START_PHASE_1_2) charImg.src = SPRITE_START_PHASE_1_2;
-                    }
-
-                    charImg.classList.remove('anim-idle');
-                    charImg.classList.add('anim-walk');
-
-                    document.getElementById('world-track').style.transform = `translateX(-${this.world * 100}vw)`;
-
-                    setTimeout(() => {
-                        this.isMoving = false;
-                        charImg.classList.remove('anim-walk');
-                        charImg.classList.add('anim-idle');
-                        this.spawnParticles(this.world);
-                        this.updateUI();
-                        
-                        if(this.world === 3) setTimeout(() => this.startCollapse(), 1000);
-                        
-                        if(this.world === 2) {
-                            document.getElementById('ghost-char').style.opacity = '0.5';
-                            AudioFx.beep(1200, 'sine', 0.05, 0.5);
-                        } else {
-                            document.getElementById('ghost-char').style.opacity = '0';
-                        }
-
-                    }, 1500);
+            spark(x, y) {
+                const colors = ['#ff003c', '#ffd700', '#ffffff'];
+                for(let i=0; i<8; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'spark';
+                    el.style.left = x + 'px';
+                    el.style.top = y + 'px';
+                    el.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                    el.style.setProperty('--tx', (Math.random()*200 - 100) + 'px');
+                    el.style.setProperty('--ty', (Math.random()*200 - 100) + 'px');
+                    document.getElementById('critical-failure-layer').appendChild(el);
+                    setTimeout(() => el.remove(), 600);
                 }
+            }
+        };
+
+        // --- SISTEMA DE PARTÍCULAS (CANVAS RESTAURADO) ---
+        const Atmosphere = {
+            active: true,
+            init() {
+                this.spawn('canvas-alpha', '#a8e6cf', 'float');
+                this.spawn('canvas-beta', '#bd00ff', 'rain');
+                this.spawn('canvas-gamma', '#ffd700', 'dust');
+            },
+            spawn(canvasId, color, mode) {
+                const cvs = document.getElementById(canvasId);
+                const ctx = cvs.getContext('2d');
+                cvs.width = window.innerWidth; cvs.height = window.innerHeight;
+                
+                const particles = [];
+                for(let i=0; i<45; i++) {
+                    particles.push({
+                        x: Math.random() * cvs.width,
+                        y: Math.random() * cvs.height,
+                        s: Math.random() * 2.5, // Partículas más grandes
+                        v: Math.random() * 1 + 0.5
+                    });
+                }
+
+                const animate = () => {
+                    if(!this.active) return;
+                    ctx.clearRect(0, 0, cvs.width, cvs.height);
+                    ctx.fillStyle = color;
+                    
+                    particles.forEach(p => {
+                        if(mode === 'float') p.y -= p.v * 0.5; 
+                        if(mode === 'rain') p.y += p.v * 2;   
+                        if(mode === 'dust') { p.x += (Math.random()-0.5); p.y += (Math.random()-0.5); }
+
+                        if(p.y < 0 && mode === 'float') p.y = cvs.height;
+                        if(p.y > cvs.height && mode === 'rain') p.y = 0;
+                        
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    requestAnimationFrame(animate);
+                };
+                animate();
+            }
+        };
+
+        // --- LÓGICA DEL JUEGO ---
+        const SystemKernel = {
+            sector: 0,
+            dataFragments: [0, 0, 0],
+            isProcessing: false,
+            consoleBusy: false,
+
+            boot() {
+                const screen = document.getElementById('boot-sequence');
+                screen.style.opacity = '0';
+                setTimeout(() => screen.remove(), 1000);
+                
+                SoundSynth.init();
+                Atmosphere.init();
+                
+                const audio = document.getElementById('ambience-stream');
+                audio.volume = 0.5; audio.play().catch(e=>console.log(e));
+
+                document.getElementById('traveler-entity').src = ASSETS.avatarNormal;
+                this.updateHUD();
             },
 
-            interact(id, text, worldId) {
-                // 1. SI YA ESTÁ LEYENDO OTRA COSA, IGNORAR CLIC (Evita saltar texto)
-                if (this.isReading) return;
-
-                const el = document.querySelectorAll('.item-orb')[id];
-                if(el.classList.contains('collected')) return;
-
-                // Bloqueamos el juego
-                this.isReading = true;
-
-                el.classList.add('collected');
-                AudioFx.beep(600 + (id*100), 'square', 0.1, 0.15);
-                setTimeout(() => AudioFx.beep(800 + (id*100), 'square', 0.1, 0.15), 100);
-
-                this.items[worldId]++;
+            warp(dir) {
+                if(this.isProcessing || this.consoleBusy) return;
                 
-                // Actualizamos solo el contador visualmente, pero NO habilitamos el botón aún
-                document.getElementById('prog-txt').innerText = `${this.items[this.world]}/${this.totalItems}`;
+                const target = this.sector + dir;
+                if(target < 0 || target > 3) return;
 
-                // Mostramos el diálogo y pasamos una función (Callback) para cuando termine
-                this.showDialog(text, () => {
-                    this.isReading = false; // Desbloqueamos el juego
-                    this.updateUI(); // AHORA verificamos si podemos avanzar
+                this.isProcessing = true;
+                this.sector = target;
+                SoundSynth.tone(150, 'sawtooth', 0.8); // Warp Sound más agresivo
+                VFX.shake(); // Screen Shake en el salto
+
+                const player = document.getElementById('traveler-entity');
+                const track = document.getElementById('world-track');
+                const ghost = document.getElementById('echo-entity');
+
+                if(this.sector >= 2) player.src = ASSETS.avatarGlitch;
+                else player.src = ASSETS.avatarNormal;
+
+                player.classList.remove('anim-breathe');
+                player.classList.add('anim-warp');
+                
+                // Efecto de blur en movimiento
+                document.getElementById('reality-viewport').style.filter = "blur(4px)";
+                track.style.transform = `translateX(-${this.sector * 100}vw)`;
+
+                setTimeout(() => {
+                    this.isProcessing = false;
+                    document.getElementById('reality-viewport').style.filter = "none";
+                    player.classList.remove('anim-warp');
+                    player.classList.add('anim-breathe');
+                    this.updateHUD();
+
+                    ghost.style.opacity = (this.sector === 2) ? '0.6' : '0';
+
+                    if(this.sector === 3) setTimeout(() => CollapseEngine.trigger(), 1000);
+
+                }, 1500);
+            },
+
+            analyze(id, data, sectorId) {
+                if(this.consoleBusy) return;
+
+                const node = document.querySelectorAll('.artifact-node')[id];
+                if(node.classList.contains('extracted')) return;
+
+                this.consoleBusy = true; 
+                node.classList.add('extracted');
+                SoundSynth.tone(600 + (id*50), 'sine', 0.3); 
+                VFX.shake(); // Screen Shake al recolectar
+
+                this.dataFragments[sectorId]++;
+                this.updateHUD();
+
+                this.decryptMessage(data, () => {
+                    this.consoleBusy = false;
+                    this.updateHUD();
                 });
             },
 
-            showDialog(txt, onFinishCallback) {
-                const box = document.getElementById('dialogue-panel');
-                box.style.display = 'block';
-                box.innerHTML = '<span class="cursor-blink"></span>';
-                let i = 0;
-                if(this.typeTimer) clearInterval(this.typeTimer);
+            decryptMessage(text, callback) {
+                const consoleUI = document.getElementById('neural-console');
+                consoleUI.style.display = 'block';
+                consoleUI.innerHTML = '<span class="blinking-cursor"></span>';
                 
-                // Velocidad de escritura
-                this.typeTimer = setInterval(() => {
-                    if(i < txt.length) {
-                        box.lastChild.insertAdjacentText('beforebegin', txt.charAt(i));
-                        i++;
-                        if(i%3===0) AudioFx.beep(200, 'noise', 0.02, 0.05);
-                    } else {
-                        clearInterval(this.typeTimer);
-                        // Tiempo de lectura (3 segundos) antes de cerrar
-                        setTimeout(() => {
-                            box.style.display = 'none';
-                            // Ejecutamos la función de desbloqueo
-                            if(onFinishCallback) onFinishCallback();
-                        }, 2300); 
+                let iteration = 0;
+                const characters = 'ABCDEF123456789#@&?!$';
+                
+                const interval = setInterval(() => {
+                    let output = "";
+                    for(let i = 0; i < text.length; i++) {
+                        if(i < iteration) output += text[i];
+                        else output += characters[Math.floor(Math.random() * characters.length)];
                     }
-                }, 35);
-            },
-
-            updateUI() {
-                const names = ["FACULTAD", "CIUDAD", "MEMORIA", "COLAPSO"];
-                document.getElementById('loc-txt').innerText = names[this.world];
-                document.getElementById('prog-txt').innerText = `${this.items[this.world]}/${this.totalItems}`;
-
-                const btnNext = document.getElementById('btn-right');
-                const btnPrev = document.getElementById('btn-left');
-
-                btnPrev.disabled = (this.world === 0);
-                
-                if(this.world < 3) {
-                    // Solo habilitar si se completaron los items Y NO SE ESTÁ LEYENDO
-                    const completed = (this.items[this.world] === this.totalItems);
+                    consoleUI.innerHTML = output;
+                    SoundSynth.noiseBurst(); // Sonido de escritura glitch
                     
-                    // Doble chequeo: Si está leyendo, el botón sigue deshabilitado visualmente
-                    if(completed && !this.isReading) {
-                        btnNext.disabled = false;
-                        btnNext.style.borderColor = "var(--c-accent)";
-                        btnNext.style.background = "#fff";
-                        if(!btnNext.classList.contains('ready')) {
-                             AudioFx.beep(1500, 'sine', 0.2, 0.3);
-                             btnNext.classList.add('ready');
-                        }
-                    } else {
-                        btnNext.disabled = true;
-                        btnNext.style.borderColor = "#444";
-                        btnNext.style.background = "#ddd";
-                        btnNext.classList.remove('ready');
+                    if(iteration >= text.length) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            consoleUI.style.display = 'none';
+                            callback();
+                        }, 2500);
                     }
-                }
+                    iteration += 1;
+                }, 20);
             },
 
-            spawnParticles(w) {
-                document.querySelectorAll('.particle-container').forEach(c => c.innerHTML='');
-                const container = document.getElementById(`fx-${w+1}`);
-                if(!container) return;
+            updateHUD() {
+                const zones = ["FACULTAD", "CIUDAD", "MEMORIA", "VACÍO"];
+                document.getElementById('mod-loc').innerText = `SEC: ${zones[this.sector]}`;
+                document.getElementById('mod-sync').innerText = `SYNC: ${this.dataFragments[this.sector] || 0}/3`;
 
-                const configs = [
-                    {sym: '✚', col: '#a8e6cf', rot: '45deg'},
-                    {sym: '♫', col: '#ff6b81', rot: '-45deg'},
-                    {sym: '❀', col: '#f1c40f', rot: '180deg'},
-                    {sym: '⚡', col: '#ff0000', rot: '90deg'}
-                ];
-                const cfg = configs[w];
+                const btnPrev = document.getElementById('nav-prev');
+                const btnNext = document.getElementById('nav-next');
 
-                for(let i=0; i<18; i++) {
-                    const p = document.createElement('div');
-                    p.className = 'particle';
-                    p.innerText = cfg.sym;
-                    p.style.color = cfg.col;
-                    p.style.left = Math.random()*100+'%';
-                    p.style.top = Math.random()*100+'%';
-                    p.style.fontSize = (12+Math.random()*18)+'px';
-                    p.style.setProperty('--duration', (4+Math.random()*3)+'s');
-                    p.style.setProperty('--rot', cfg.rot);
-                    container.appendChild(p);
-                }
-            },
-
-            startCollapse() {
-                document.getElementById('ui-layer').style.display = 'none';
-                const ost = document.getElementById('bg-ost');
-                let rate = 1.0;
-                const slowDown = setInterval(() => {
-                    if(rate > 0.7) { rate -= 0.05; ost.playbackRate = rate; }
-                    else { clearInterval(slowDown); }
-                }, 200);
+                btnPrev.disabled = (this.sector === 0);
                 
-                AudioFx.beep(100, 'sawtooth', 0.3, 1.0);
-                FinalGame.init();
+                const completed = this.dataFragments[this.sector] >= 3;
+                if(completed && !this.consoleBusy) {
+                    btnNext.disabled = false;
+                    btnNext.style.background = "var(--soul-gold)";
+                    btnNext.style.color = "black";
+                    btnNext.style.boxShadow = "0 0 20px var(--soul-gold)";
+                } else {
+                    btnNext.disabled = true;
+                    btnNext.style.background = "rgba(255,255,255,0.05)";
+                    btnNext.style.color = "white";
+                    btnNext.style.boxShadow = "none";
+                }
+                
+                if(this.sector === 3) btnNext.disabled = true;
             }
         };
 
-        // === MINIJUEGO FINAL (COLAPSO) ===
-        const FinalGame = {
-            hp: 50, active: false,
-            init() {
-                document.getElementById('collapse-system').style.display = 'flex';
+        // --- MOTOR DE COLAPSO (ESTEROIDES ACTIVADOS) ---
+        const CollapseEngine = {
+            integrity: 30,
+            active: false,
+            decayRate: 0.15, 
+            clickPower: 12,  
+            
+            trigger() {
+                document.getElementById('head-up-display').style.display = 'none';
+                document.getElementById('critical-failure-layer').style.display = 'flex';
                 this.active = true;
-                this.loop();
-                this.glitchSpawner();
-            },
-            pump() {
-                if(!this.active) return;
-                this.hp = Math.min(100, this.hp + 14);
-                AudioFx.beep(180, 'square', 0.2, 0.1);
-                const h = document.getElementById('heart-btn');
-                h.style.transform = "scale(1.3)";
-                setTimeout(() => h.style.transform = "scale(1)", 50);
-            },
-            loop() {
-                if(!this.active) return;
-                this.hp -= 0.38;
-                const fill = document.getElementById('hp-val');
-                fill.style.width = Math.max(0, this.hp) + '%';
                 
-                if(this.hp < 25) fill.style.background = "#fff";
-                else fill.style.background = "linear-gradient(to right, var(--c-danger), #ff5555)";
-
-                if(this.hp > 98) this.end(true);
-                if(this.hp <= 0) { 
-                    this.hp = 60; 
-                    AudioFx.beep(50, 'noise', 0.3, 0.2);
-                }
+                const audio = document.getElementById('ambience-stream');
+                audio.playbackRate = 0.5; 
                 
-                requestAnimationFrame(() => this.loop());
-            },
-            glitchSpawner() {
-                if(!this.active) return;
-                const words = ["NO PUEDO OLVIDAR", "TE SIENTO", "SISTEMA SOBRECARGADO", "MEMORIA LLENA", "DEMASIADO AMOR", "ERROR: CORAZÓN EXPUESTO"];
-
-                const el = document.createElement('div'); el.className='glitch-txt';
-                el.innerText = words[Math.floor(Math.random()*words.length)];
-                el.style.left = Math.random()*85+5+'%';
-                el.style.top = Math.random()*85+5+'%';
-                document.getElementById('collapse-system').appendChild(el);
-                setTimeout(()=>el.remove(), 700);
-                setTimeout(()=>this.glitchSpawner(), 900 + Math.random()*500);
-            },
-            end() {
-                this.active = false;
-                document.body.style.transition = "opacity 2.5s ease-out";
-                document.body.style.opacity = "0";
-                const ost = document.getElementById('bg-ost');
-                let vol = ost.volume;
-                const fade = setInterval(() => { if(vol>0) {vol-=0.05; ost.volume=vol;} else clearInterval(fade); }, 150);
+                this.spawnGlitches();
+                this.decayLoop();
 
                 setTimeout(() => {
-                    (window.location.href = 'fase5.html');
-                }, 3000);
+                    if(this.active) {
+                        this.showButton("TIEMPO AGOTADO - CONTINUAR");
+                    }
+                }, 10000);
+            },
+
+            beat(e) { // Acepta el evento del mouse para las partículas
+                if(!this.active) return;
+                this.integrity += this.clickPower;
+                
+                // VFX EXPLOSIVOS
+                SoundSynth.tone(100, 'square', 0.1); 
+                VFX.shake(); 
+                if(e) VFX.spark(e.clientX, e.clientY); // Chispas donde haces clic
+
+                if(this.integrity >= 100) this.success(); 
+                
+                const heart = document.getElementById('heart-reactor');
+                heart.style.transform = "scale(1.5) rotate(5deg)";
+                setTimeout(() => heart.style.transform = "scale(1) rotate(0deg)", 80);
+            },
+
+            decayLoop() {
+                if(!this.active) return;
+                
+                this.integrity -= this.decayRate;
+                
+                const bar = document.getElementById('integrity-fill');
+                bar.style.width = Math.max(0, Math.min(100, this.integrity)) + "%";
+                
+                if(this.integrity < 30) bar.style.background = "#fff";
+                else if (this.integrity > 80) bar.style.background = "#fff"; // Flash blanco al estar lleno
+                else bar.style.background = "linear-gradient(90deg, #ff003c, #ffcc00)";
+
+                if(this.integrity >= 100) {
+                    this.success();
+                    return; 
+                }
+
+                if(this.integrity <= 0) {
+                    this.integrity = 20; 
+                    SoundSynth.tone(50, 'sawtooth', 0.5); 
+                }
+                
+                requestAnimationFrame(() => this.decayLoop());
+            },
+
+            spawnGlitches() {
+                if(!this.active) return;
+                const phrases = ["ERROR", "VÍNCULO", "FUEGO", "DATA", "CORAZÓN", "SISTEMA"];
+                
+                const el = document.createElement('div');
+                el.className = 'glitch-text-node';
+                el.innerText = phrases[Math.floor(Math.random()*phrases.length)];
+                el.style.left = Math.random() * 80 + 10 + "%";
+                el.style.top = Math.random() * 80 + 10 + "%";
+                el.style.transform = `rotate(${Math.random()*20 - 10}deg)`;
+                
+                document.getElementById('critical-failure-layer').appendChild(el);
+                setTimeout(() => el.remove(), 500);
+                setTimeout(() => this.spawnGlitches(), 400); // Más glitches más rápido
+            },
+
+            success() {
+                this.active = false;
+                // Efecto Visual de Éxito
+                const bar = document.getElementById('integrity-fill');
+                bar.style.width = "100%";
+                bar.style.background = "var(--soul-gold)";
+                bar.style.boxShadow = "0 0 50px var(--soul-gold)";
+
+                this.showButton("SINCRONIZACIÓN COMPLETA - CONTINUAR");
+            },
+
+            showButton(text) {
+                const btn = document.getElementById('continue-btn');
+                btn.style.display = 'block';
+                btn.innerText = text;
+                
+                // Ocultar corazón para limpiar pantalla
+                document.getElementById('heart-reactor').style.display = 'none';
             }
         };
     </script>
     <script type="module">
         import { registrarPaso } from './telemetry.js';
-        registrarPaso("Fase 4: RPG Odisea");
+        registrarPaso("Eco III : Titan Edition");
     </script>
-
-</body>
-</html>
-
 </body>
 </html>
