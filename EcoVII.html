@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+      <script>
+    // === SISTEMA DE SEGURIDAD (EL PORTERO) ===
+    (function() {
+        // 1. Buscamos la llave en el almacenamiento del navegador
+        const llave = localStorage.getItem('llave_acceso_dedicatoria');
+        
+        // 2. Si NO existe la llave...
+        if (!llave) {
+            // ...lo mandamos de una patada al index.html
+            console.warn("⛔ ACCESO DENEGADO: Redirigiendo al inicio...");
+            window.location.href = 'index.html';
+        }
+    })();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
