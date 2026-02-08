@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+  <title>ECO VI: SINGULARIDAD RESONANTE (MAX)</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ──────────────────────────────────────────────── */
+    /* FASE 0.0: CONSTANTES DE INGENIERÍA ECO */
+    :root {
+      --void-deep: #020205;
+      --neon-cyan: #00f3ff;
+      --neon-pink: #ff0055;
+      --soul-gold: #ffcc00;
+      --warm-white: #fffdf0;
+      
+      /* CAPAS DIMENSIONALES (Z-INDEX) */
+      --z-bg: 100;
+      --z-particles: 120;
+      --z-lights: 150;
+      --z-actors: 200;
+      --z-notes: 400;
+      --z-hud: 500;
+      --z-pads: 600;
+      --z-vignette: 1400;
+      --z-overlay: 1500; 
+      --z-ui: 2000;
+    }
+
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; touch-action: manipulation;
+    }
+
+    body {
+      height: 100dvh; overflow: hidden;
+      background: var(--void-deep);
+      color: var(--warm-white); font-family: 'Share Tech Mono', monospace;
+      image-rendering: pixelated; 
+    }
+
+    /* CONTENEDOR MAESTRO */
+    #container {
+      position: relative; width: 100%; height: 100dvh;
+      background-size: cover; background-position: center bottom;
+      transition: filter 0.1s ease-in-out, transform 0.1s cubic-bezier(0.1, 0.9, 0.2, 1);
+      overflow: hidden;
+      background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e1a6472ff47ad12b47845c319be590b72b217217/Faces%206%20ECO5/ecenario%20luces%20apagadas.webp');
+      animation: scene-breathe 5s infinite alternate ease-in-out; /* Acelerado para más intensidad */
+    }
+    
+    @keyframes scene-breathe {
+      0% { transform: scale(1); filter: brightness(1); }
+      100% { transform: scale(1.1); filter: brightness(1.2) saturate(1.5); } /* Esteroides: más zoom y color */
+    }
+
+    /* --- EFECTOS LOW-LAG (OPTIMIZADOS Y VISIBLES) --- */
+    
+    /* Efecto 1: Bump del fondo al acertar (MÁS FUERTE) */
+    .bg-bump-hit {
+      animation: bumpAnim 0.08s cubic-bezier(0.34, 1.56, 0.64, 1); /* Más rápido y fuerte */
+    }
+    @keyframes bumpAnim {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.95) translateZ(0); filter: brightness(1.5); } /* Golpe más seco y brillo */
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    /* Efecto 2: Scanlines (MÁS VISIBLES) */
+    .scanlines {
+      position: fixed; inset: 0; z-index: var(--z-overlay); pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 0, 0, 0.25) 3px,
+        rgba(0, 0, 0, 0.25) 4px
+      );
+      opacity: 0.8; /* Más opaco para impacto */
+      animation: scanline-flicker 0.5s infinite alternate; /* Nuevo: flicker para esteroides */
+    }
+    @keyframes scanline-flicker {
+      0% { opacity: 0.8; }
+      100% { opacity: 0.6; }
+    }
+
+    /* VIÑETA CINEMATOGRÁFICA */
+    .vignette-overlay {
+      position: absolute; inset: 0; pointer-events: none; z-index: var(--z-vignette);
+      background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.9) 120%); /* Más intensa */
+    }
+
+    /* PARTÍCULAS (Polvo + Esteroides: más y más rápidas) */
+    .dust-particle {
+      position: absolute; background: white; border-radius: 50%;
+      opacity: 0.5; pointer-events: none; z-index: var(--z-particles);
+      animation: floatDust 6s infinite linear; /* Acelerado */
+    }
+    @keyframes floatDust { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 0.7; transform: translateY(-50vh) rotate(180deg); } 100% { transform: translateY(-100vh); opacity: 0; } } /* Rotación añadida */
+
+    /* ──────────────────────────────────────────────── */
+    /* SISTEMA DE LUCES OPTIMIZADO (RITMO Y COLOR) */
+    
+    #light-show-layer {
+      position: absolute; inset: 0; z-index: var(--z-lights);
+      pointer-events: none; 
+      opacity: 0; transition: opacity 1s;
+      animation: light-pulse 1s infinite alternate; /* Nuevo: pulso global para música */
+    }
+    @keyframes light-pulse {
+      0% { filter: brightness(1); }
+      100% { filter: brightness(1.5); }
+    }
+
+    .spotlight {
+      position: absolute; top: -60%; left: 50%;
+      width: 500px; height: 200vh; /* Más grandes */
+      background: radial-gradient(ellipse at top, rgba(255,255,255,0.6) 0%, transparent 60%);
+      transform-origin: top center;
+      filter: blur(12px); /* Más blur para drama */
+      will-change: transform;
+    } 
+    
+    /* Animaciones de Color y Movimiento Rítmico (Más rápidas y variadas) */
+    .spot-left { 
+      left: 10%; 
+      animation: spot-dance-left 3s infinite ease-in-out alternate; /* Acelerado */
+    }
+    .spot-right { 
+      left: 90%; 
+      animation: spot-dance-right 3.5s infinite ease-in-out alternate-reverse;
+    }
+    .spot-center {
+      left: 50%; 
+      animation: spot-dance-center 2.5s infinite ease-in-out alternate;
+    }
+
+    /* Definición de ritmos de luces (Más colores y cambios) */
+    @keyframes spot-dance-left {
+      0% { transform: rotate(-30deg); background: radial-gradient(ellipse at top, rgba(0, 243, 255, 0.7) 0%, transparent 70%); }
+      33% { transform: rotate(15deg); background: radial-gradient(ellipse at top, rgba(160, 32, 240, 0.7) 0%, transparent 70%); }
+      66% { transform: rotate(-15deg); background: radial-gradient(ellipse at top, rgba(255, 255, 0, 0.7) 0%, transparent 70%); }
+      100% { transform: rotate(30deg); background: radial-gradient(ellipse at top, rgba(0, 243, 255, 0.7) 0%, transparent 70%); }
+    }
+
+    @keyframes spot-dance-right {
+      0% { transform: rotate(30deg); background: radial-gradient(ellipse at top, rgba(255, 0, 85, 0.7) 0%, transparent 70%); }
+      33% { transform: rotate(-15deg); background: radial-gradient(ellipse at top, rgba(255, 165, 0, 0.7) 0%, transparent 70%); }
+      66% { transform: rotate(15deg); background: radial-gradient(ellipse at top, rgba(0, 255, 255, 0.7) 0%, transparent 70%); }
+      100% { transform: rotate(-30deg); background: radial-gradient(ellipse at top, rgba(255, 0, 85, 0.7) 0%, transparent 70%); }
+    }
+
+    @keyframes spot-dance-center {
+      0% { transform: rotate(0deg) scale(1); background: radial-gradient(ellipse at top, rgba(255, 204, 0, 0.7) 0%, transparent 70%); opacity: 0.5; }
+      50% { transform: rotate(10deg) scale(1.2); background: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.8) 0%, transparent 70%); opacity: 0.8; }
+      100% { transform: rotate(-10deg) scale(1); background: radial-gradient(ellipse at top, rgba(255, 204, 0, 0.7) 0%, transparent 70%); opacity: 0.5; }
+    }
+    
+    .strobe-flash {
+      position: absolute; inset: 0; background: #fff;
+      z-index: 180; opacity: 0; pointer-events: none;
+    }
+    .flash-active { animation: strobe 0.05s; } /* Más rápido */
+    @keyframes strobe { 0% { opacity: 0.8; } 100% { opacity: 0; } }
+
+    /* ──────────────────────────────────────────────── */
+    /* RESTO DE ESTILOS BASE */
+    .crt-overlay {
+      position: fixed; inset: 0; pointer-events: none; z-index: var(--z-overlay);
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.03), rgba(0, 0, 255, 0.05));
+      background-size: 100% 3px, 3px 100%; /* Más denso */
+      opacity: 0.5; 
+      animation: crt-flicker 0.1s infinite; /* Nuevo flicker */
+    }
+    @keyframes crt-flicker {
+      0% { opacity: 0.5; }
+      50% { opacity: 0.3; }
+      100% { opacity: 0.5; }
+    }
+
+    #darkness-layer {
+      position: absolute; inset: 0;
+      background: #050510; opacity: 0.6; 
+      z-index: 150; pointer-events: none;
+      transition: opacity 2s ease-in-out;
+    }
+
+    #countdown-display {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Press Start 2P'; font-size: 10rem; /* Más grande */
+      color: var(--soul-gold); text-shadow: 0 0 70px var(--soul-gold);
+      z-index: var(--z-ui); pointer-events: none;
+      opacity: 0; transform: scale(0.5);
+    }
+    .beat-pulse { animation: pulseBeat 1s forwards; } /* Acelerado */
+    @keyframes pulseBeat {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(1.5); }
+    }
+
+    #start-screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(5, 5, 10, 0.95); z-index: var(--z-ui);
+      transition: opacity 1s steps(10);
+    }
+
+    h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 2rem; color: var(--warm-white);
+      text-align: center; margin-bottom: 2rem;
+      text-shadow: 0 0 25px var(--neon-cyan);
+      line-height: 1.6;
+      animation: title-glow 1s infinite alternate; /* Nuevo glow */
+    }
+    @keyframes title-glow {
+      0% { text-shadow: 0 0 25px var(--neon-cyan); }
+      100% { text-shadow: 0 0 40px var(--neon-pink); }
+    }
+
+    #progress-container {
+      width: 60%; height: 10px;
+      border: 2px solid var(--soul-gold);
+      padding: 2px; position: relative;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    }
+
+    #bar { width: 0%; height: 100%; background: var(--soul-gold); border-radius: 6px; box-shadow: 0 0 15px var(--soul-gold); transition: width 0.1s linear; }
+
+    .start-btn {
+      margin-top: 3rem; padding: 1rem 2.5rem;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1rem; color: var(--void-deep);
+      background: var(--soul-gold); border: none;
+      cursor: pointer; display: none;
+      box-shadow: 0 0 35px var(--soul-gold);
+      border-radius: 4px;
+      animation: pulseBtn 1.5s infinite ease-in-out; /* Acelerado */
+    }
+    
+    @keyframes pulseBtn { 0% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.9; } }
+
+    .actors-container {
+      position: absolute; inset: 0;
+      z-index: var(--z-actors);
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding-bottom: 0; pointer-events: none;
+    }
+
+    @keyframes idle-float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-12px) scale(1.03); } /* Más alto */
+    }
+    
+    @keyframes idle-float-mirror {
+      0%, 100% { transform: scaleX(-1) translateY(0) scale(1); }
+      50% { transform: scaleX(-1) translateY(-12px) scale(1.03); }
+    }
+
+    .character-static {
+      transition: filter 0.5s, opacity 0.5s;
+      position: absolute; bottom: 22vh;
+      opacity: 0; filter: brightness(0.8);
+    }
+
+    #yo-static { left: 12%; width: 180px; animation: idle-float 3s ease-in-out infinite; } /* Acelerado */
+    #ella-static { right: 12%; width: 118px; animation: idle-float-mirror 3.2s ease-in-out infinite; }
+
+    .sprite-actor {
+      position: absolute; bottom: 22vh;
+      background-repeat: no-repeat; overflow: hidden;
+      opacity: 0; transition: opacity 0.3s;
+      image-rendering: pixelated;
+    }
+    
+    #yo-sprite { 
+        left: 10%; width: 180px; height: 308px; 
+        background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e1a6472ff47ad12b47845c319be590b72b217217/Sprites/yo_bailando_sprite.webp');
+        animation: idle-float 2.5s ease-in-out infinite; /* Acelerado */
+    }
+    
+    #ella-sprite { 
+        right: 10%; width: 180px; height: 268px; 
+        background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/e1a6472ff47ad12b47845c319be590b72b217217/Sprites/ella_bailando_sprite.webp'); 
+        transform: scaleX(-1);
+        bottom: 26vh;
+        animation: idle-float-mirror 2.7s ease-in-out infinite; 
+    }
+
+    .k-spin { animation: anim-spin 0.4s ease-out !important; } /* Más rápido */
+    .k-jump { animation: anim-jump 0.3s ease-out !important; }
+    .k-wobble { animation: anim-wobble 0.3s ease-in-out !important; }
+    
+    @keyframes anim-spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(360deg) scale(1.3); } 100% { transform: rotate(360deg) scale(1); } } /* Más escala */
+    @keyframes anim-jump { 0% { transform: translateY(0); } 50% { transform: translateY(-70px) scale(0.8, 1.2); } 100% { transform: translateY(0); } } /* Más alto */
+    @keyframes anim-wobble { 0% { transform: skew(0deg); } 25% { transform: skew(15deg); } 75% { transform: skew(-15deg); } 100% { transform: skew(0deg); } } /* Más skew */
+
+    .k-spin-mirror { animation: anim-spin-mirror 0.4s ease-out !important; }
+    @keyframes anim-spin-mirror { 0% { transform: scaleX(-1) rotate(0deg); } 50% { transform: scaleX(-1) rotate(-360deg) scale(1.3); } 100% { transform: scaleX(-1) rotate(-360deg); } }
+    .k-jump-mirror { animation: anim-jump-mirror 0.3s ease-out !important; }
+    @keyframes anim-jump-mirror { 0% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-70px); } 100% { transform: scaleX(-1) translateY(0); } }
+
+    .baile-lola-postura-inicio { background-position: 0px 0px; } .baile-lola-paso-cadera { background-position: -180px 0px; } .baile-lola-deslizo-bajo { background-position: -360px 0px; } .baile-lola-ritmo-multiple { background-position: 0px -268px; } .baile-lola-patada-estilo { background-position: -180px -268px; } .baile-lola-final-victoria { background-position: -360px -268px; } .baile-lola-giro-timido { background-position: 0px -536px; } .baile-lola-break-pino { background-position: -180px -536px; } .baile-lola-pose-fija { background-position: -360px -536px; }
+    .baile-chico-apertura { background-position: 0px 0px; } .baile-chico-puntero-suelo { background-position: -180px 0px; } .baile-chico-desplazamiento { background-position: -360px 0px; } .baile-chico-caminata-flow { background-position: 0px -308px; } .baile-chico-bounce-cadera { background-position: -180px -308px; } .baile-chico-kick-dance { background-position: -360px -308px; } .baile-chico-toprock-suelo { background-position: 0px -616px; } .baile-chico-freeze-espera { background-position: -180px -616px; } .baile-chico-salto-exito { background-position: -360px -616px; }
+
+    .sprite-hit-effect { filter: brightness(2) drop-shadow(0 0 30px var(--soul-gold)) hue-rotate(30deg); } /* Más brillo y color shift */
+
+    #game-layer { position: absolute; inset: 0; z-index: var(--z-notes); display: flex; }
+    .lane { flex: 1; position: relative; overflow: hidden; }
+
+    .note {
+      position: absolute; left: 50%;
+      width: 65px; height: 65px; /* Más grandes */
+      background: radial-gradient(circle, #fff 30%, transparent 70%);
+      border: 3px solid var(--warm-white);
+      border-radius: 50%; 
+      transform: translateX(-50%);
+      box-shadow: 0 0 35px var(--neon-cyan), inset 0 0 15px white;
+      z-index: var(--z-notes);
+      animation: note-pulse 0.5s infinite alternate; /* Nuevo pulso */
+    }
+    @keyframes note-pulse {
+      0% { transform: translateX(-50%) scale(1); }
+      100% { transform: translateX(-50%) scale(1.1); }
+    }
+    
+    .note::after {
+      content: ''; position: absolute; top: -60px; left: 20%; width: 60%; height: 80px;
+      background: linear-gradient(to top, var(--neon-cyan), transparent);
+      opacity: 0.7; filter: blur(7px);
+    }
+
+    .tap-zone-container {
+      position: absolute; bottom: 4%; width: 100%; z-index: var(--z-pads);
+      display: flex; justify-content: space-around; pointer-events: none;
+      opacity: 0; transition: opacity 1s; 
+    }
+
+    .tap-pad {
+      width: 110px; height: 110px; /* Más grandes */
+      border: 3px solid rgba(255, 255, 255, 0.4);
+      border-bottom: 7px solid var(--neon-cyan);
+      background: rgba(0, 243, 255, 0.1);
+      pointer-events: auto;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 35px rgba(0, 243, 255, 0.2);
+      border-radius: 50%;
+      backdrop-filter: blur(7px);
+      transition: transform 0.05s cubic-bezier(0.1, 0.9, 0.2, 1); /* Más responsive */
+    }
+
+    .tap-pad:active { transform: scale(0.85); background: rgba(0, 243, 255, 0.4); border-color: #fff; box-shadow: 0 0 50px rgba(0, 243, 255, 0.5); }
+    .pad-pink { border-bottom-color: var(--neon-pink); background: rgba(255, 0, 85, 0.1); }
+    .pad-pink:active { background: rgba(255, 0, 85, 0.4); box-shadow: 0 0 50px rgba(255, 0, 85, 0.5); }
+
+    #hud {
+      position: absolute; top: 40px; width: 100%; text-align: center; z-index: var(--z-hud);
+      font-family: 'Orbitron', sans-serif; pointer-events: none;
+      opacity: 0; transition: opacity 1s;
+    }
+
+    #score-text { 
+      font-size: 32px; color: var(--soul-gold); font-weight: 700;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+      animation: score-breath 1.5s infinite ease-in-out; /* Acelerado */
+    }
+    @keyframes score-breath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+    #multiplier-text { font-size: 26px; color: #fff; margin-top: 8px; text-shadow: 0 0 15px var(--neon-cyan); }
+    #combo-text { font-size: 18px; color: var(--neon-pink); margin-top: 5px; opacity: 0; letter-spacing: 3px; }
+    
+    .score-pop { animation: popText 0.15s !important; }
+    @keyframes popText { 0% { transform: scale(1); } 50% { transform: scale(1.6); color: #fff; } 100% { transform: scale(1); } } /* Más pop */
+
+    /* VFX GLITCH Y ERROR (Optimizado para no romper la GPU) */
+    .screen-error { 
+      filter: grayscale(1) contrast(1.5) hue-rotate(180deg) !important; 
+      animation: glitch-shake 0.15s both; /* Más rápido */
+    }
+    
+    @keyframes glitch-shake {
+      0% { transform: translate(0); }
+      20% { transform: translate(-10px, 10px); }
+      40% { transform: translate(10px, -10px); }
+      60% { transform: translate(-10px, -10px); }
+      80% { transform: translate(10px, 10px); }
+      100% { transform: translate(0); }
+    }
+
+    #ending {
+      position: absolute; inset: 0; background: #fff; color: #000;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 5000; opacity: 0; transition: opacity 3s;
+      font-family: 'VT323'; font-size: 2.5rem; text-align: center; pointer-events: none;
+    }
+    #ending.active { opacity: 1; pointer-events: auto; }
+
+    .emote {
+      position: absolute; font-size: 3rem; /* Más grande */
+      animation: floatUp 0.6s forwards ease-out;
+      z-index: 600; pointer-events: none; filter: drop-shadow(0 0 15px white);
+    }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(0.8); opacity: 1; } 100% { transform: translateY(-100px) scale(1.8); opacity: 0; } } /* Más alto y escala */
+
+  </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="crt-overlay"></div>
+<div class="vignette-overlay"></div>
+<div id="darkness-layer"></div>
+<div id="countdown-display">3</div>
+
+<div id="dust-layer"></div>
+
+<div id="light-show-layer">
+  <div class="spotlight spot-left"></div>
+  <div class="spotlight spot-center"></div>
+  <div class="spotlight spot-right"></div>
+</div>
+<div id="strobe" class="strobe-flash"></div>
+
+<div id="container">
+
+  <div id="start-screen">
+    <h1>ECO VI<br>SOUL RESONANCE</h1>
+    <div id="progress-container"><div id="bar"></div></div>
+    <div id="load-status" style="margin-top: 20px; font-family: 'VT323'; font-size: 1.3rem; color: #eee;">SINTONIZANDO LATIDOS...</div>
+    <button id="btn-start" class="start-btn">CONECTAR HISTORIA</button>
+  </div>
+
+  <div id="hud">
+    <div id="score-text">000000</div>
+    <div id="multiplier-text">x1.0</div>
+    <div id="combo-text">COMBO: 0</div>
+  </div>
+
+  <div id="game-layer">
+    <div id="lane-0" class="lane"></div>
+    <div id="lane-1" class="lane"></div>
+  </div>
+
+  <div class="actors-container">
+    <img id="yo-static" class="character-static" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/9dadd84bb5327d566f58dd3f460590427c42e628/Faces%206%20ECO5/yo%20normal.webp">
+    <img id="ella-static" class="character-static" src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/9dadd84bb5327d566f58dd3f460590427c42e628/Faces%206%20ECO5/ella_normal.webp">
+    
+    <div id="yo-sprite" class="sprite-actor baile-chico-apertura"></div>
+    <div id="ella-sprite" class="sprite-actor baile-lola-postura-inicio"></div>
+  </div>
+
+  <div class="tap-zone-container">
+    <div id="pad-0" class="tap-pad"></div>
+    <div id="pad-1" class="tap-pad pad-pink"></div>
+  </div>
+
+  <div id="ending">
+    <div id="final-msg" style="padding: 20px;"></div>
+  </div>
+
+</div>
+
+<audio id="audio-track" preload="auto">
+  <source src="https://raw.githubusercontent.com/Notes356/NotasParsMIRO/9dadd84bb5327d566f58dd3f460590427c42e628/Faces%206%20ECO5/subir_coqueta.ogg" type="audio/ogg">
+</audio>
+
+<audio id="sfx-hit" preload="auto">
+  <source src="https://example.com/hit-sound.ogg" type="audio/ogg"> <!-- Reemplaza con URL real de sonido de hit -->
+</audio>
+
+<audio id="sfx-miss" preload="auto">
+  <source src="https://example.com/miss-sound.ogg" type="audio/ogg"> <!-- Reemplaza con URL real de sonido de miss -->
+</audio>
+
+<audio id="sfx-combo" preload="auto">
+  <source src="https://example.com/combo-sound.ogg" type="audio/ogg"> <!-- Reemplaza con URL real de sonido de combo -->
+</audio>
+
+<script>
+/* ──────────────────────────────────────────────── */
+/* PROTOCOLO ECO VI: FINAL (FULL FEATURES + ESTEROIDES) */
+
+const ECO_CORE = {
+  score: 0,
+  combo: 0,
+  multiplier: 1.0,
+  isPlaying: false,
+  baseSpeed: 2000, /* Más rápido base */
+  baseInterval: 700, /* Más notas */
+  currentSpeed: 2000,
+  currentInterval: 700,
+  intensityLevel: 1,
+  terminationTimer: null, 
+  notes: [],
+  movesYo: [
+    'baile-chico-apertura', 'baile-chico-puntero-suelo', 'baile-chico-desplazamiento',
+    'baile-chico-caminata-flow', 'baile-chico-bounce-cadera', 'baile-chico-kick-dance',
+    'baile-chico-toprock-suelo', 'baile-chico-freeze-espera', 'baile-chico-salto-exito'
+  ],
+  movesElla: [
+    'baile-lola-postura-inicio', 'baile-lola-paso-cadera', 'baile-lola-deslizo-bajo',
+    'baile-lola-ritmo-multiple', 'baile-lola-patada-estilo', 'baile-lola-final-victoria',
+    'baile-lola-giro-timido', 'baile-lola-break-pino', 'baile-lola-pose-fija'
+  ],
+  kineticMoves: ['k-jump', 'k-spin', 'k-wobble']
+};
+
+const UI = {
+  container: document.getElementById('container'),
+  bar: document.getElementById('bar'),
+  btn: document.getElementById('btn-start'),
+  music: document.getElementById('audio-track'),
+  sfxHit: document.getElementById('sfx-hit'),
+  sfxMiss: document.getElementById('sfx-miss'),
+  sfxCombo: document.getElementById('sfx-combo'),
+  score: document.getElementById('score-text'),
+  mult: document.getElementById('multiplier-text'),
+  combo: document.getElementById('combo-text'),
+  yoStatic: document.getElementById('yo-static'),
+  ellaStatic: document.getElementById('ella-static'),
+  yoSprite: document.getElementById('yo-sprite'),
+  ellaSprite: document.getElementById('ella-sprite'),
+  lanes: [document.getElementById('lane-0'), document.getElementById('lane-1')],
+  pads: [document.getElementById('pad-0'), document.getElementById('pad-1')],
+  darkness: document.getElementById('darkness-layer'),
+  countdown: document.getElementById('countdown-display'),
+  lights: document.getElementById('light-show-layer'),
+  strobe: document.getElementById('strobe'),
+  dust: document.getElementById('dust-layer')
+};
+
+const bgLit = new Image();
+bgLit.src = "https://raw.githubusercontent.com/Notes356/NotasParsMIRO/9dadd84bb5327d566f58dd3f460590427c42e628/Faces%206%20ECO5/ecenario%20luces%20encendidas.webp";
+
+function playPowerUpSFX() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine'; 
+  osc.frequency.setValueAtTime(200, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 3); /* Más alta */
+  gain.gain.setValueAtTime(0.1, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 2);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 4);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 4.1);
+}
+
+function createDust() {
+  for(let i=0; i<40; i++) { /* Más partículas */
+    const d = document.createElement('div');
+    d.className = 'dust-particle';
+    d.style.left = Math.random() * 100 + '%';
+    d.style.top = Math.random() * 100 + '%';
+    d.style.width = Math.random() * 4 + 'px';
+    d.style.height = d.style.width;
+    d.style.animationDuration = (Math.random() * 4 + 4) + 's'; /* Variado */
+    UI.dust.appendChild(d);
+  }
+}
+
+function initSystem() {
+  createDust();
+  let p = 0;
+  const timer = setInterval(() => {
+    p += Math.random() * 7; /* Más rápido loading */
+    UI.bar.style.width = Math.min(p, 100) + '%';
+    if (p >= 100) {
+      clearInterval(timer);
+      document.getElementById('load-status').innerText = "VÍNCULO ESTABLECIDO.";
+      document.getElementById('load-status').style.color = "var(--soul-gold)";
+      UI.btn.style.display = 'block';
+    }
+  }, 80);
+}
+
+UI.btn.addEventListener('click', async () => {
+  if (ECO_CORE.isPlaying) return;
+  
+  if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(e => console.log(e));
+  }
+  
+  document.getElementById('start-screen').style.opacity = '0';
+  setTimeout(() => document.getElementById('start-screen').remove(), 1000);
+  playPowerUpSFX();
+  setTimeout(() => {
+    UI.yoStatic.style.opacity = '1';
+    UI.ellaStatic.style.opacity = '1';
+    UI.darkness.style.opacity = '0.4'; 
+  }, 500);
+  runCountdown(3);
+});
+
+function runCountdown(num) {
+  if (num > 0) {
+    UI.countdown.innerText = num;
+    UI.countdown.classList.remove('beat-pulse');
+    void UI.countdown.offsetWidth; 
+    UI.countdown.classList.add('beat-pulse');
+    setTimeout(() => runCountdown(num - 1), 1000); /* Acelerado */
+  } else {
+    UI.countdown.innerText = "¡DANCE!";
+    UI.countdown.style.color = "var(--soul-gold)";
+    UI.countdown.classList.remove('beat-pulse');
+    void UI.countdown.offsetWidth; 
+    UI.countdown.classList.add('beat-pulse');
+    setTimeout(() => {
+        UI.countdown.style.display = 'none';
+        triggerGameStart();
+    }, 600);
+  }
+}
+
+function triggerGameStart() {
+  ECO_CORE.isPlaying = true;
+  
+  UI.container.style.backgroundImage = `url('${bgLit.src}')`;
+  UI.darkness.style.opacity = '0';
+  
+  UI.yoStatic.style.opacity = '0';
+  UI.ellaStatic.style.opacity = '0';
+  
+  UI.yoSprite.style.opacity = '1';
+  UI.ellaSprite.style.opacity = '1';
+  
+  triggerDance(0, 'baile-chico-bounce-cadera'); 
+  triggerDance(1, 'baile-lola-paso-cadera');
+
+  document.getElementById('hud').style.opacity = '1';
+  document.querySelector('.tap-zone-container').style.opacity = '1';
+  UI.lights.style.opacity = '1'; 
+
+  UI.music.play();
+  gameLoop();
+  
+  // Timer de cierre (1:50)
+  ECO_CORE.terminationTimer = setTimeout(() => {
+      runSingularity();
+  }, 110000);
+}
+
+function gameLoop() {
+  if (!ECO_CORE.isPlaying) return;
+  const lane = Math.random() > 0.5 ? 0 : 1;
+  createNote(lane);
+  setTimeout(gameLoop, ECO_CORE.currentInterval);
+}
+
+function checkDifficultyEscalation() {
+  if (ECO_CORE.combo > 0 && ECO_CORE.combo % 8 === 0) { /* Cada 8 para más frecuente */
+    ECO_CORE.intensityLevel++;
+    ECO_CORE.currentSpeed = Math.max(1000, ECO_CORE.baseSpeed * Math.pow(0.85, ECO_CORE.intensityLevel)); /* Más agresivo */
+    ECO_CORE.currentInterval = Math.max(300, ECO_CORE.baseInterval * Math.pow(0.88, ECO_CORE.intensityLevel));
+    UI.strobe.classList.add('flash-active');
+    setTimeout(() => UI.strobe.classList.remove('flash-active'), 50); /* Más rápido */
+    UI.container.style.filter = `brightness(\( {1 + (ECO_CORE.intensityLevel * 0.1)}) saturate( \){1 + (ECO_CORE.intensityLevel * 0.2)})`;
+    if (ECO_CORE.combo % 16 === 0) UI.sfxCombo.play(); /* SFX para combos grandes */
+  }
+}
+
+function createNote(laneIdx) {
+  const noteEl = document.createElement('div');
+  noteEl.className = 'note';
+  noteEl.style.borderColor = laneIdx === 0 ? "var(--neon-cyan)" : "var(--neon-pink)";
+  
+  if (laneIdx === 1) {
+      noteEl.style.boxShadow = "0 0 35px var(--neon-pink), inset 0 0 15px white";
+  }
+
+  UI.lanes[laneIdx].appendChild(noteEl);
+
+  const noteObj = {
+    el: noteEl,
+    lane: laneIdx,
+    startTime: Date.now(),
+    hit: false,
+    speed: ECO_CORE.currentSpeed 
+  };
+
+  ECO_CORE.notes.push(noteObj);
+
+  const animate = setInterval(() => {
+    const elapsed = Date.now() - noteObj.startTime;
+    const progress = elapsed / noteObj.speed;
+
+    noteEl.style.top = (progress * 100) + '%';
+    noteEl.style.transform = `translateX(-50%) rotate(${progress * 720}deg)`; /* Más rotación */
+
+    if (progress > 1.10) {
+      clearInterval(animate);
+      if (!noteObj.hit) handleMiss();
+      noteEl.remove();
+      ECO_CORE.notes = ECO_CORE.notes.filter(n => n !== noteObj);
+    }
+  }, 16);
+  
+  UI.music.onended = () => runSingularity();
+}
+
+function checkHit(laneIdx) {
+  const laneNotes = ECO_CORE.notes.filter(n => n.lane === laneIdx && !n.hit && parseFloat(n.el.style.top) < 99);
+  
+  if (laneNotes.length > 0) {
+    const target = laneNotes[0];
+    const top = parseFloat(target.el.style.top);
+
+    if (top > 75 && top < 99) {
+      processHit(target, laneIdx);
+    } else {
+      handleMiss(); 
+    }
+  }
+}
+
+// >>> FUNCIÓN TRIGGER DE EFECTO DE BUMP <<<
+function triggerBgBump() {
+  UI.container.classList.remove('bg-bump-hit');
+  void UI.container.offsetWidth; 
+  UI.container.classList.add('bg-bump-hit');
+  setTimeout(() => {
+      UI.container.classList.remove('bg-bump-hit');
+  }, 100); /* Más corto */
+}
+
+function processHit(noteObj, laneIdx) {
+  noteObj.hit = true;
+  noteObj.el.style.transform = "translateX(-50%) scale(2)"; /* Más escala */
+  noteObj.el.style.opacity = "0";
+  setTimeout(() => noteObj.el.remove(), 100);
+  
+  // ACTIVAR BUMP VISUAL
+  triggerBgBump();
+
+  ECO_CORE.combo++;
+  ECO_CORE.multiplier = 1.0 + (Math.floor(ECO_CORE.combo / 6) * 0.3); /* Más multiplicador */
+  ECO_CORE.score += Math.floor(150 * ECO_CORE.multiplier); /* Más puntos */
+  
+  checkDifficultyEscalation();
+  updateHUD();
+  spawnHitVFX(laneIdx);
+  
+  const moves = laneIdx === 0 ? ECO_CORE.movesYo : ECO_CORE.movesElla;
+  const randomMove = moves[Math.floor(Math.random() * moves.length)];
+  triggerDance(laneIdx, randomMove);
+
+  if (navigator.vibrate) navigator.vibrate(60); /* Más vibración */
+  UI.sfxHit.play(); /* SFX hit */
+}
+
+function triggerDance(laneIdx, moveClass) {
+  const sprite = laneIdx === 0 ? UI.yoSprite : UI.ellaSprite;
+  sprite.className = 'sprite-actor'; 
+  void sprite.offsetWidth; 
+  sprite.classList.add(moveClass);
+  sprite.classList.add('sprite-hit-effect');
+  
+  let kineticClass = null;
+  if (ECO_CORE.combo > 1) { /* Más frecuente */
+    const kMoves = ECO_CORE.kineticMoves;
+    kineticClass = kMoves[Math.floor(Math.random() * kMoves.length)];
+    if (laneIdx === 1) {
+        if (kineticClass === 'k-spin') kineticClass = 'k-spin-mirror';
+        if (kineticClass === 'k-jump') kineticClass = 'k-jump-mirror';
+    }
+    sprite.classList.add(kineticClass);
+  }
+  
+  setTimeout(() => {
+      sprite.classList.remove('sprite-hit-effect');
+      if (kineticClass) sprite.classList.remove(kineticClass);
+  }, 400); /* Más corto */
+}
+
+function handleMiss() {
+  ECO_CORE.combo = 0;
+  ECO_CORE.multiplier = 1.0;
+  ECO_CORE.intensityLevel = 1;
+  ECO_CORE.currentSpeed = ECO_CORE.baseSpeed;
+  ECO_CORE.currentInterval = ECO_CORE.baseInterval;
+  
+  updateHUD();
+  UI.container.classList.add('screen-error');
+  setTimeout(() => UI.container.classList.remove('screen-error'), 200); /* Más corto */
+  
+  triggerDance(0, 'baile-chico-freeze-espera');
+  triggerDance(1, 'baile-lola-giro-timido');
+  if (navigator.vibrate) navigator.vibrate(300); /* Más vibración */
+  UI.sfxMiss.play(); /* SFX miss */
+}
+
+function updateHUD() {
+  UI.score.innerText = String(ECO_CORE.score).padStart(6, '0');
+  UI.score.classList.remove('score-pop');
+  void UI.score.offsetWidth;
+  UI.score.classList.add('score-pop');
+  
+  UI.mult.innerText = `x${ECO_CORE.multiplier.toFixed(1)}`;
+  UI.combo.innerText = `COMBO: ${ECO_CORE.combo}`;
+  if (ECO_CORE.combo > 1) UI.combo.classList.add('combo-active');
+  else UI.combo.classList.remove('combo-active');
+}
+
+function spawnHitVFX(laneIdx) {
+  const emotes = ['❤️', '✨', '🔥', '🎵', '🌟', '💥', '⚡']; /* Más emotes */
+  const el = document.createElement('div');
+  el.className = 'emote';
+  el.innerText = emotes[Math.floor(Math.random() * emotes.length)];
+  const pad = UI.pads[laneIdx];
+  const rect = pad.getBoundingClientRect();
+  el.style.left = (rect.left + rect.width / 2 - 25) + 'px';
+  el.style.top = (rect.top - 60) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800); /* Más duración */
+}
+
+function runSingularity() {
+  if (!ECO_CORE.isPlaying) return; 
+  
+  ECO_CORE.isPlaying = false;
+  clearTimeout(ECO_CORE.terminationTimer);
+
+  // Ocultar interfaz
+  document.getElementById('hud').style.opacity = "0";
+  document.querySelector('.tap-zone-container').style.opacity = "0";
+  UI.lights.style.opacity = '0';
+  UI.dust.style.opacity = '0';
+
+  // Ocultar sprites bailando
+  UI.yoSprite.style.opacity = '0';
+  UI.ellaSprite.style.opacity = '0';
+  
+  // Mostrar estáticos
+  UI.yoStatic.style.opacity = '1';
+  UI.ellaStatic.style.opacity = '1';
+  
+  // Animación de acercamiento
+  UI.yoStatic.style.transition = "all 5s cubic-bezier(0.22, 1, 0.36, 1)";
+  UI.ellaStatic.style.transition = "all 5s cubic-bezier(0.22, 1, 0.36, 1)";
+  
+  UI.yoStatic.style.left = "40%";
+  UI.yoStatic.style.transform = "scale(1.2)";
+  UI.ellaStatic.style.right = "40%";
+  UI.ellaStatic.style.transform = "scaleX(-1) scale(1.2)";
+
+  // Mostrar mensaje final y SALTAR
+  setTimeout(() => {
+    document.getElementById('ending').classList.add('active');
+    typeMsg("Al final, solo quedamos nosotros.");
+
+    // === CÓDIGO NUEVO PARA EL SALTO ===
+    setTimeout(() => {
+        window.location.href = 'EcoVII.html';
+    }, 5000); // Espera 6 segundos (mientras se escribe el texto) y salta
+    // ==================================
+
+  }, 3500);
+}
+
+
+function typeMsg(txt) {
+  const el = document.getElementById('final-msg');
+  el.innerHTML = "";
+  let i = 0;
+  const t = setInterval(() => {
+    el.innerText += txt[i];
+    i++;
+    if (i >= txt.length) clearInterval(t);
+  }, 60); /* Más rápido */
+}
+
+/* INPUTS */
+UI.pads[0].addEventListener('pointerdown', (e) => { e.preventDefault(); checkHit(0); });
+UI.pads[1].addEventListener('pointerdown', (e) => { e.preventDefault(); checkHit(1); });
+
+window.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  if (e.key === 'a' || e.key === 'ArrowLeft') { 
+    UI.pads[0].style.transform = "scale(0.85)"; 
+    UI.pads[0].style.background = "var(--neon-cyan)";
+    checkHit(0); 
+  }
+  if (e.key === 'd' || e.key === 'ArrowRight') { 
+    UI.pads[1].style.transform = "scale(0.85)";
+    UI.pads[1].style.background = "var(--neon-pink)";
+    checkHit(1); 
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.key === 'a' || e.key === 'ArrowLeft') {
+    UI.pads[0].style.transform = "scale(1)"; 
+    UI.pads[0].style.background = "rgba(0, 243, 255, 0.1)";
+  }
+  if (e.key === 'd' || e.key === 'ArrowRight') {
+    UI.pads[1].style.transform = "scale(1)";
+    UI.pads[1].style.background = "rgba(255, 0, 85, 0.1)";
+  }
+});
+
+initSystem();
+ </script>
+        <script type="module">
+        import { registrarPaso } from './telemetry.js';
+        registrarPaso("Eco VI: El SINGULAR [God Mode]");
+    </script>
+</body>
+</html>

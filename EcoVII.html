@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>ECO VII: LIVING MEMORY</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --void: #050505;
+            --theme-color: #00f3ff; 
+            
+            --z-bg: 100;
+            --z-ghosts: 200;
+            --z-grid: 300;
+            --z-game: 500;
+            --z-narrative: 600;
+            --z-vignette: 800;
+            --z-ui: 900;
+            --z-overlay: 2000;
+            --z-chaos: 2500;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            height: 100dvh; overflow: hidden;
+            background: var(--void);
+            font-family: 'VT323', monospace;
+            color: white;
+            transition: background 0.5s;
+            image-rendering: pixelated; 
+            cursor: crosshair;
+        }
+
+        /* FONDO */
+        #infinite-bg {
+            position: absolute; inset: 0; z-index: var(--z-bg);
+            width: 100%; height: 100%; pointer-events: none;
+            filter: brightness(0.3) contrast(1.2) grayscale(0.5); 
+            background: #000;
+        }
+        .bg-tile {
+            position: absolute; left: 0; width: 100%; height: 102%;
+            background-size: cover; background-position: center;
+            will-change: transform;
+        }
+
+        #pixel-grid {
+            position: fixed; inset: 0; z-index: var(--z-grid); pointer-events: none;
+            background-image: 
+                linear-gradient(transparent 98%, rgba(0, 243, 255, 0.08) 50%),
+                linear-gradient(90deg, transparent 98%, rgba(0, 243, 255, 0.08) 50%);
+            background-size: 40px 40px;
+            opacity: 0.6;
+        }
+
+        #atmosphere {
+            position: fixed; inset: 0; z-index: var(--z-vignette); pointer-events: none;
+            background: radial-gradient(circle, transparent 40%, #000 120%);
+        }
+
+        .glitch-active {
+            animation: hardShake 0.2s infinite steps(2);
+            filter: contrast(150%) hue-rotate(90deg);
+        }
+        @keyframes hardShake {
+            0% { transform: translate(2px, 2px); }
+            50% { transform: translate(-2px, -2px); }
+        }
+
+        /* === CAPA DE FANTASMAS (PERSISTENTES) === */
+        #ghost-layer { position: absolute; inset: 0; z-index: var(--z-ghosts); pointer-events: none; overflow: hidden; }
+
+        /* Clase base para las entidades */
+        .entity-ghost {
+            position: absolute;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            /* Transición suave para opacidad y filtro */
+            transition: opacity 2s ease-in-out, filter 1s, transform 2s ease-out;
+            opacity: 0; /* Empiezan invisibles */
+            transform-origin: center;
+            filter: drop-shadow(4px 4px 0px rgba(0, 243, 255, 0.2)) grayscale(0.1);
+            transform: scale(0.7); /* Empiezan un poco más pequeños */
+        }
+
+        /* Definición ELLA (Tamaño fijo del recorte) */
+        #ghost-ella {
+            width: 282.66px; height: 316px; 
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/24801792c97ddec3ecdb400026d4e1cbe4bdb774/Sprites/ella_reacciones_sprite.webp');
+            /* La escala base se maneja en JS ahora para evitar conflictos */
+        }
+
+        /* Definición YO (Tamaño fijo del recorte) */
+        #ghost-yo {
+            width: 249.33px; height: 336px; 
+            background-size: 748px 1344px; /* Tamaño total hoja sprites */
+            background-image: url('https://raw.githubusercontent.com/Notes356/NotasParsMIRO/1ba92a07af92120a782cd81d8f1591ff84738e5d/Sprites/yo_reaccioness.webp');
+        }
+
+        .ghost-visible { opacity: 0.95; transform: scale(0.85); /* Zoom in al aparecer */ }
+        .ghost-faded { opacity: 0; transform: scale(0.7); /* Zoom out al irse */ }
+        
+        /* Animación de respiración */
+        @keyframes ghostBreath {
+            0%, 100% { transform: translateY(0px) scale(0.8); }
+            50% { transform: translateY(-15px) scale(0.82); }
+        }
+
+        /* JUEGO */
+        #game-layer { position: absolute; inset: 0; z-index: var(--z-game); }
+        
+        .connection-line {
+            stroke: var(--theme-color); stroke-width: 3;
+            stroke-dasharray: 15; animation: dash 1s steps(8) infinite; opacity: 0.7;
+            shape-rendering: crispEdges; 
+        }
+        @keyframes dash { to { stroke-dashoffset: -30; } }
+
+        .node {
+            position: absolute; width: 14px; height: 14px;
+            background: #000; border: 2px solid var(--theme-color);
+            box-shadow: 3px 3px 0px rgba(0, 243, 255, 0.4); 
+        }
+
+        #core-ball {
+            position: absolute; width: 18px; height: 18px;
+            background: #fff; 
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
+            z-index: 600;
+        }
+
+        .msg-collision {
+            position: absolute; font-family: 'VT323', monospace;
+            color: #fff; pointer-events: none; white-space: nowrap; 
+            font-size: 2.5rem; text-shadow: 3px 3px 0px #000;
+            animation: msgPop 3s steps(15) forwards; z-index: 700;
+        }
+        @keyframes msgPop {
+            0% { opacity: 0; transform: translate(10px, -10px) scale(0.8); }
+            20% { opacity: 1; transform: translate(20px, -30px) scale(1.1); }
+            100% { opacity: 0; transform: translate(30px, -60px) scale(1); }
+        }
+
+        /* NARRATIVA */
+       #narrative-layer {
+            position: absolute; inset: 0; z-index: var(--z-narrative); 
+            pointer-events: none; display: flex; 
+            justify-content: center; align-items: flex-end; 
+            text-align: center; padding-bottom: 180px;
+        }
+
+        .narrative-text {
+            font-family: 'VT323', monospace; 
+            font-size: 2.2rem; line-height: 1.2; color: #ffffff;
+            text-shadow: 3px 3px 0px #000, 0 0 10px var(--theme-color);
+            opacity: 0; transition: opacity 0.8s, transform 0.8s;
+            max-width: 90%;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid var(--theme-color);
+            padding: 20px;
+            box-shadow: 8px 8px 0px rgba(0, 243, 255, 0.2);
+        }
+        .narrative-visible { opacity: 1; transform: scale(1); }
+        .narrative-hidden { opacity: 0; transform: scale(0.95); }
+
+        .chaos-text {
+            position: absolute; font-family: 'VT323', monospace; 
+            font-weight: bold; pointer-events: none; z-index: var(--z-chaos);
+            animation: chaosAppear 0.3s steps(3) forwards;
+            text-shadow: 4px 4px 0px #000;
+        }
+        @keyframes chaosAppear {
+            0% { opacity: 0; transform: scale(2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        #depth-meter {
+            position: absolute; top: 30px; right: 30px;
+            font-family: 'VT323'; font-size: 1.8rem; color: #fff; z-index: var(--z-ui);
+            background: #000; padding: 5px 15px; border: 2px solid #333;
+        }
+
+        #start-screen {
+            position: absolute; inset: 0; background: #000; z-index: var(--z-overlay);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .btn {
+            margin-top: 2rem; padding: 1rem 3rem; 
+            border: 4px solid var(--theme-color); color: var(--theme-color); background: #000;
+            font-family: 'VT323'; font-size: 2rem; cursor: pointer; display: none;
+            text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 8px 8px 0px var(--theme-color); 
+            transition: transform 0.1s;
+        }
+        .btn:hover { transform: translate(2px, 2px); box-shadow: 6px 6px 0px var(--theme-color); }
+        .btn:active { transform: translate(8px, 8px); box-shadow: none; }
+
+        #end-screen {
+            position: fixed; inset: 0; background: #000; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 3s steps(10);
+            color: white;
+        }
+
+        .collision-ripple {
+            position: absolute; border: 3px solid var(--theme-color); border-radius: 0%; 
+            pointer-events: none; z-index: var(--z-game);
+            transform: translate(-50%, -50%); animation: rippleEffect 0.8s steps(8) forwards;
+        }
+        @keyframes rippleEffect {
+            0% { width: 0; height: 0; opacity: 1; border-width: 5px; }
+            100% { width: 200px; height: 200px; opacity: 0; border-width: 1px; }
+        }
+
+        #crt-overlay {
+            position: fixed; inset: 0; z-index: var(--z-overlay); pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+            background-size: 100% 4px; opacity: 0.2;
+        }
+        #vignette-bloom {
+            position: fixed; inset: 0; z-index: var(--z-vignette); pointer-events: none;
+            box-shadow: inset 0 0 100px rgba(0, 243, 255, 0.1);
+        }
+        #particle-canvas {
+            position: fixed; inset: 0; z-index: 550; pointer-events: none; image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+<canvas id="particle-canvas" style="position:fixed; inset:0; z-index:400; pointer-events:none;"></canvas>
+<div id="pixel-grid"></div>
+<div id="crt-overlay"></div>
+<div id="vignette-bloom"></div>
+
+    <div id="end-screen">
+        <h1 style="font-family:'VT323'; color:red; text-shadow:4px 4px 0px #500; margin-bottom:20px; font-size: 5rem;">GAME OVER</h1>
+        <p style="font-family:'VT323'; font-size: 2rem; color:#888;">Te quiero. Para mí.</p>
+    </div>
+
+    <div id="atmosphere"></div>
+
+    <div id="infinite-bg">
+        <div id="bg-1" class="bg-tile" style="top: 0;"></div>
+        <div id="bg-2" class="bg-tile" style="top: 100%;"></div>
+    </div>
+
+    <div id="ghost-layer">
+        <div id="ghost-ella" class="entity-ghost"></div>
+        <div id="ghost-yo" class="entity-ghost"></div>
+    </div>
+
+    <div id="game-layer">
+        <svg style="position:absolute; width:100%; height:100%; pointer-events:none;">
+            <line id="line" class="connection-line" x1="0" y1="0" x2="0" y2="0"/>
+        </svg>
+        <div id="nodes-container"></div>
+        <div id="core-ball"></div>
+    </div>
+
+    <div id="narrative-layer">
+        <div id="narrative-display" class="narrative-text"></div>
+    </div>
+
+    <div id="depth-meter">DEPTH: 0m</div>
+
+    <div id="start-screen">
+        <h1 style="font-family: 'VT323'; color: #fff; text-shadow: 5px 5px 0px cyan; font-size: 5rem; line-height: 0.8;">ECO VII</h1>
+        <p style="color: #00f3ff; margin-top:20px; font-family: 'VT323'; font-size: 1.5rem;">[ MEMORY SYNC READY ]</p>
+        <button id="start-btn" class="btn">INITIALIZE</button>
+    </div>
+
+<script>
+    /* ================= CONFIGURACIÓN ================= */
+    const ASSETS = {
+        bg: 'https://raw.githubusercontent.com/Notes356/NotasParsMIRO/24801792c97ddec3ecdb400026d4e1cbe4bdb774/Sprites/3dc387151b115cf7ae0cf344b8e40eff.gif',
+        audio: 'https://raw.githubusercontent.com/Notes356/NotasParsMIRO/1ba92a07af92120a782cd81d8f1591ff84738e5d/Sprites/lolivac-love-you-295635.ogg'
+    };
+
+    const LETTER_TEXT = [
+        "Te amo Mili",
+        "Te amo todos los días",
+        "Hice todo esto porque empecé a sentir el miedo",
+        "Empezaba a caer en cuenta",
+        "Que aunque te ame...",
+        "No significa nada",
+        "Y me dolía sentir que no hablaríamos más",
+        "Creí que estabas aquí porque sentías algo",
+        "Pero yo no puedo saber",
+        "Y al salir, al observar con atención",
+        "Me di cuenta...",
+        "Que los hombres y mujeres son muy diferentes a mí",
+        "Y a lo que yo pensaba de vos",
+        "No estoy listo y no quiero dejarte de amar", 
+        "Pero es muy triste",
+        "Te recontra mil amo a vos y solo quiero estar con vos",
+        "¿Pero vos no llegaste a sentir algo así por mí cierto?",
+        "Aunque tenga que hacer otras cosas",
+        "Aunque otras personas me hablen",
+        "Vos siempre sos prioridad para mi mente",
+        "Siempre te elige a vos",
+        "Me das fuerza, Valor",
+        "Pero recordar que no puedes estar conmigo...",
+        "Me quitaba el propósito",
+        "Y ahora tal vez entiendo que no es que me quieras alejar",
+        "Sino que algo o alguien más era tu prioridad",
+        "Estuve toda la semana haciendo esto",
+        "Y la verdad no lo quería acabar...",
+        "Porque era la única conexión que siento real",
+        "Te quiero",
+        "Para mí"
+    ];
+
+    const COLLISION_WORDS = ["TE AMO", "ERROR", "HERMOSA", "VOS", "WAIT", "HURT", "4EVER", "HELP", "ECO", "LIFE", "BYE"];
+
+    // COORDENADAS EXACTAS DE SPRITES (CSS Background Position)
+    const SPRITE_POS = {
+        ella: {
+            good: ['0px 0px', '-282.66px 0px', '-565.33px 0px', '-565.33px -632px', '0px -948px', '-282.66px -948px'],
+            bad:  ['0px -316px', '-282.66px -316px', '-565.33px -316px', '0px -632px', '-282.66px -632px', '-565.33px -948px']
+        },
+        yo: {
+            good: ['0px 0px', '-249.33px 0px', '-498.66px 0px', '-249.33px -672px', '-498.66px -672px', '0px -1008px', '-249.33px -1008px'],
+            bad:  ['0px -336px', '-249.33px -336px', '-498.66px -336px', '0px -672px', '-498.66px -1008px']
+        }
+    };
+
+    const SYSTEM = {
+        running: false,
+        depth: 0,
+        speed: 1.8,       
+        ballSpeed: 0.04,  
+        nodes: [],
+        currentIdx: 0,
+        ball: { x: window.innerWidth/2, y: 100 },
+        letterIdx: 0,
+        finaleMode: false,
+        audioCtx: null,
+        audioSource: null,
+        gainNode: null,
+        filterNode: null,
+        audioInitialized: false,
+        gameInitialized: false
+    };
+
+    /* ================= GESTOR DE FANTASMAS (ANIMADOS) ================= */
+    const GHOSTS = {
+        ella: {
+            el: document.getElementById('ghost-ella'),
+            active: false,
+            x: 0, y: 0,
+            targetY: 0,
+            mood: 'good',
+            timer: null
+        },
+        yo: {
+            el: document.getElementById('ghost-yo'),
+            active: false,
+            x: 0, y: 0,
+            targetY: 0,
+            mood: 'good',
+            timer: null
+        }
+    };
+
+    // FUNCIÓN MAESTRA: Despertar fantasma
+    function wakeUpGhost(type, forcedMood = null) {
+        const ghost = GHOSTS[type];
+        if(ghost.active) return; // Ya está en pantalla
+
+        ghost.active = true;
+        
+        // --- NUEVA LÓGICA DE POSICIÓN ANTI-ENCIMADO ---
+        const otherType = (type === 'ella') ? 'yo' : 'ella';
+        const otherGhost = GHOSTS[otherType];
+        const screenW = window.innerWidth;
+
+        let posX;
+        if (otherGhost.active) {
+            // DETECCIÓN DE COMPAÑERO: Si el otro está a la izquierda, yo voy a la derecha (y viceversa)
+            if (otherGhost.x < screenW / 2) {
+                // El compañero está en la izquierda -> Yo aparezco en el sector derecho (60% al 90%)
+                posX = Math.random() * (screenW * 0.3) + (screenW * 0.6);
+            } else {
+                // El compañero está en la derecha -> Yo aparezco en el sector izquierdo (10% al 40%)
+                posX = Math.random() * (screenW * 0.3) + (screenW * 0.1);
+            }
+        } else {
+            // Si estoy solo en pantalla, posición aleatoria normal evitando bordes pegados
+            posX = Math.random() * (screenW * 0.6) + (screenW * 0.2);
+        }
+        
+        ghost.x = posX;
+        ghost.y = window.innerHeight + 200; // Empieza abajo
+        ghost.targetY = (Math.random() * (window.innerHeight * 0.4)) + (window.innerHeight * 0.2); // Sube hasta el centro
+
+        // Decidir Humor (Mood)
+        if (forcedMood) {
+            ghost.mood = forcedMood;
+        } else {
+            // A partir de 3000m o si forzamos sprites negativos
+            ghost.mood = (SYSTEM.depth > 3000 || Math.random() < 0.2) ? 'bad' : 'good';
+        }
+
+        // Aplicar estilos iniciales
+        ghost.el.style.left = ghost.x + 'px';
+        ghost.el.style.top = ghost.y + 'px';
+        ghost.el.classList.remove('ghost-faded');
+        ghost.el.classList.add('ghost-visible');
+
+        // INICIAR CICLO DE ANIMACIÓN DE EXPRESIONES
+        startExpressionCycle(type);
+
+        // Desvanecer después de 9 segundos
+        setTimeout(() => {
+            ghost.el.classList.remove('ghost-visible');
+            ghost.el.classList.add('ghost-faded');
+            clearInterval(ghost.timer); // Dejar de animar
+            ghost.active = false;
+        }, 9000);
+    }
+
+    function startExpressionCycle(type) {
+        const ghost = GHOSTS[type];
+        const frames = SPRITE_POS[type][ghost.mood];
+        
+        // Función interna para cambiar frame
+        const changeFrame = () => {
+            if(!ghost.active) return;
+            const randomFrame = frames[Math.floor(Math.random() * frames.length)];
+            ghost.el.style.backgroundPosition = randomFrame;
+        };
+
+        // Primer frame inmediato
+        changeFrame();
+
+        // Cambiar frame cada 800ms - 1500ms (Ritmo de conversación/reacción)
+        ghost.timer = setInterval(changeFrame, 1200);
+    }
+
+    function updateGhostsPositions() {
+        ['ella', 'yo'].forEach(key => {
+            const g = GHOSTS[key];
+            if(g.active) {
+                // Interpolación suave hacia arriba (Lerp)
+                g.y += (g.targetY - g.y) * 0.02;
+                // Pequeña oscilación vertical (Respiración) y horizontal
+                const oscX = Math.sin(Date.now() / 1500) * 10;
+                const oscY = Math.sin(Date.now() / 1000) * 15; // Flotar arriba y abajo
+                
+                // Aplicar con Math.floor para pixel perfect
+                // AQUÍ SE APLICA LA ESCALA 0.8 PARA HACERLOS MÁS PEQUEÑOS
+                g.el.style.transform = `translate(-50%, 0) scale(0.8) translate(${Math.floor(oscX)}px, ${Math.floor(oscY)}px)`;
+                g.el.style.top = Math.floor(g.y) + 'px';
+            }
+        });
+    }
+
+    const DOM = {
+        bg1: document.getElementById('bg-1'),
+        bg2: document.getElementById('bg-2'),
+        line: document.getElementById('line'),
+        meter: document.getElementById('depth-meter'),
+        nodesDiv: document.getElementById('nodes-container'),
+        ball: document.getElementById('core-ball'),
+        narrative: document.getElementById('narrative-display'),
+        btn: document.getElementById('start-btn'),
+        canvas: document.getElementById('particle-canvas'),
+        ctx: document.getElementById('particle-canvas').getContext('2d')
+    };
+
+    const loadImg = (src) => new Promise(resolve => { const img = new Image(); img.onload = resolve; img.onerror = resolve; img.src = src; });
+
+    Promise.all([loadImg(ASSETS.bg)]).then(() => {
+        DOM.bg1.style.backgroundImage = `url('${ASSETS.bg}')`;
+        DOM.bg2.style.backgroundImage = `url('${ASSETS.bg}')`;
+        DOM.btn.style.display = 'block';
+    });
+
+    /* ================= PARTÍCULAS ================= */
+    const particles = [];
+    function createParticles(x, y, color) {
+        for (let i = 0; i < 12; i++) { 
+            particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 8, 
+                vy: (Math.random() - 0.5) * 8,
+                life: 1.0,
+                color: color || '#00f3ff'
+            });
+        }
+    }
+
+    function updateParticles() {
+        if (!DOM.ctx) return;
+        DOM.ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+        const camOffset = window.innerHeight / 2 - SYSTEM.ball.y;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02; 
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+                continue;
+            }
+            DOM.ctx.fillStyle = p.color;
+            DOM.ctx.globalAlpha = p.life;
+            DOM.ctx.fillRect(Math.floor(p.x), Math.floor(p.y + camOffset), 6, 6);
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        DOM.canvas.width = window.innerWidth;
+        DOM.canvas.height = window.innerHeight;
+        DOM.ctx.imageSmoothingEnabled = false;
+    });
+    if(DOM.ctx) DOM.ctx.imageSmoothingEnabled = false;
+
+    /* ================= AUDIO ================= */
+    async function initAudio() {
+        if (SYSTEM.audioInitialized) return;
+        SYSTEM.audioInitialized = true;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        SYSTEM.audioCtx = new AudioContext();
+        
+        try {
+            const response = await fetch(ASSETS.audio);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await SYSTEM.audioCtx.decodeAudioData(arrayBuffer);
+            
+            SYSTEM.audioSource = SYSTEM.audioCtx.createBufferSource();
+            SYSTEM.audioSource.buffer = audioBuffer;
+            SYSTEM.audioSource.loop = true;
+
+            SYSTEM.gainNode = SYSTEM.audioCtx.createGain();
+            SYSTEM.gainNode.gain.value = 0.8;
+
+            SYSTEM.filterNode = SYSTEM.audioCtx.createBiquadFilter();
+            SYSTEM.filterNode.type = "lowpass";
+            SYSTEM.filterNode.frequency.value = 20000;
+
+            SYSTEM.audioSource.connect(SYSTEM.filterNode);
+            SYSTEM.filterNode.connect(SYSTEM.gainNode);
+            SYSTEM.gainNode.connect(SYSTEM.audioCtx.destination);
+            
+            SYSTEM.audioSource.start(0);
+        } catch(e) { console.error(e); }
+    }
+
+    function updateAudioEffects() {
+        if (!SYSTEM.audioSource || !SYSTEM.filterNode) return;
+        const progress = SYSTEM.letterIdx / LETTER_TEXT.length;
+        let intensity = 0;
+        if (progress > 0.75) intensity = (progress - 0.75) / 0.25;
+        const newFreq = 20000 - (intensity * 18000); 
+        SYSTEM.filterNode.frequency.setTargetAtTime(newFreq, SYSTEM.audioCtx.currentTime, 0.1);
+        let detuneValue = -intensity * 600;
+        if(SYSTEM.finaleMode) {
+            detuneValue = -1200; 
+            SYSTEM.filterNode.frequency.setTargetAtTime(150, SYSTEM.audioCtx.currentTime, 0.5);
+        }
+        SYSTEM.audioSource.detune.setTargetAtTime(detuneValue, SYSTEM.audioCtx.currentTime, 0.1);
+    }
+
+    /* ================= GAMEPLAY ================= */
+    
+    function spawnCollisionMsg(x, y) {
+        const isRed = Math.random() > 0.7;
+        createParticles(x, y, isRed ? '#ff0055' : '#00f3ff');
+
+        const ripple = document.createElement('div');
+        ripple.className = 'collision-ripple';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        DOM.nodesDiv.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 800);
+
+        const text = COLLISION_WORDS[Math.floor(Math.random() * COLLISION_WORDS.length)];
+        const el = document.createElement('div');
+        el.className = 'msg-collision';
+        el.innerText = text;
+        el.style.left = x + 'px';
+        el.style.top = (y - 30) + 'px';
+        
+        if(Math.random() > 0.7) {
+            el.style.color = '#ff0055'; 
+            el.style.textShadow = '3px 3px 0px #500';
+        }
+        DOM.nodesDiv.appendChild(el);
+        setTimeout(() => el.remove(), 2500); 
+    }
+
+    function updateNarrative() {
+        const triggerDepth = 250 + (SYSTEM.letterIdx * 160); 
+
+        if (SYSTEM.depth > triggerDepth && SYSTEM.letterIdx < LETTER_TEXT.length) {
+            const text = LETTER_TEXT[SYSTEM.letterIdx];
+            DOM.narrative.classList.remove('narrative-visible');
+            DOM.narrative.classList.add('narrative-hidden');
+            setTimeout(() => {
+                DOM.narrative.innerText = text;
+                DOM.narrative.classList.remove('narrative-hidden');
+                DOM.narrative.classList.add('narrative-visible');
+            }, 500);
+            SYSTEM.letterIdx++;
+            if (SYSTEM.letterIdx === LETTER_TEXT.length) setTimeout(startFinale, 4000);
+        }
+    }
+
+    function createNode(yOffset) {
+        const node = document.createElement('div');
+        node.className = 'node';
+        const x = Math.random() * (window.innerWidth - 80) + 40;
+        const lastY = SYSTEM.nodes.length > 0 ? SYSTEM.nodes[SYSTEM.nodes.length-1].y : 300;
+        node.style.left = `${x}px`;
+        node.style.top = `${lastY + yOffset}px`;
+        DOM.nodesDiv.appendChild(node);
+        SYSTEM.nodes.push({ el: node, x: x, y: lastY + yOffset, hit: false });
+    }
+
+    /* ================= FINAL ================= */
+    function startFinale() {
+        if(SYSTEM.finaleMode) return;
+        SYSTEM.finaleMode = true;
+        
+        SYSTEM.speed = 0; 
+        SYSTEM.ballSpeed = 0; 
+        
+        document.body.classList.add('glitch-active');
+        DOM.narrative.style.display = 'none'; 
+        DOM.ball.style.boxShadow = "0 0 0 4px red";
+        DOM.ball.style.background = "red";
+
+        const words = ["TE AMO", "TE QUIERO","ERROR","SYSTEM", "FOREVER", "STAY", "VOID", "FEAR", "SOLO VOS"];
+        let counter = 0;
+        const totalDuration = 8000; 
+        const intervalTime = 200; 
+
+        const chaosInterval = setInterval(() => {
+            const t = words[Math.floor(Math.random() * words.length)];
+            const el = document.createElement('div');
+            el.className = 'chaos-text';
+            el.innerText = t;
+            
+            const rX = Math.random() * 90 + 5; 
+            const rY = Math.random() * 90 + 5;
+            
+            el.style.left = rX + '%';
+            el.style.top = rY + '%';
+            
+            const size = 1 + Math.random() * 3; 
+            const rotation = Math.floor(Math.random() * 4) * 90; 
+            const isRed = Math.random() > 0.6;
+            
+            el.style.fontSize = `${size}rem`;
+            el.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
+            el.style.color = isRed ? '#ff0040' : '#fff';
+            el.style.textShadow = isRed ? '3px 3px 0px #500' : '3px 3px 0px #005';
+
+            document.body.appendChild(el);
+            counter += intervalTime;
+            
+            if(SYSTEM.audioSource) {
+                 SYSTEM.audioSource.playbackRate.value = 0.5 + (Math.random() * 0.5);
+            }
+        }, intervalTime);
+
+        setTimeout(() => {
+            clearInterval(chaosInterval);
+            SYSTEM.running = false;
+            if(SYSTEM.gainNode) {
+                SYSTEM.gainNode.gain.linearRampToValueAtTime(0, SYSTEM.audioCtx.currentTime + 2);
+            }
+            document.getElementById('end-screen').style.opacity = 1;
+        }, totalDuration);
+    }
+
+    /* ================= BUCLE ================= */
+    let bgY = 0;
+    
+    function gameLoop() {
+        if(!SYSTEM.running && !SYSTEM.finaleMode) return;
+        
+        updateParticles(); 
+        updateGhostsPositions(); // Mover fantasmas
+
+        if(!SYSTEM.finaleMode) {
+            bgY -= SYSTEM.speed;
+            if(bgY <= -window.innerHeight) bgY += window.innerHeight;
+            DOM.bg1.style.transform = `translateY(${bgY}px)`;
+            DOM.bg2.style.transform = `translateY(${bgY + window.innerHeight}px)`;
+        }
+
+        if (!SYSTEM.finaleMode) {
+            const target = SYSTEM.nodes[SYSTEM.currentIdx];
+            if (target) {
+                DOM.line.setAttribute('x1', SYSTEM.ball.x);
+                DOM.line.setAttribute('y1', SYSTEM.ball.y);
+                DOM.line.setAttribute('x2', target.x);
+                DOM.line.setAttribute('y2', target.y);
+
+                SYSTEM.ball.x += (target.x - SYSTEM.ball.x) * SYSTEM.ballSpeed;
+                SYSTEM.ball.y += (target.y - SYSTEM.ball.y) * SYSTEM.ballSpeed;
+                
+                DOM.ball.style.left = SYSTEM.ball.x + 'px';
+                DOM.ball.style.top = SYSTEM.ball.y + 'px';
+
+                const dist = Math.hypot(target.x - SYSTEM.ball.x, target.y - SYSTEM.ball.y);
+                if (dist < 30 && !target.hit) { 
+                    target.hit = true;
+                    target.el.style.borderColor = '#fff';
+                    target.el.style.background = '#fff';
+                    SYSTEM.currentIdx++;
+                    SYSTEM.depth += Math.floor(Math.random()*40 + 40); 
+                    DOM.meter.innerText = `DEPTH: ${SYSTEM.depth}m`;
+                    
+                    spawnCollisionMsg(target.x, target.y);
+                    
+                    // GESTIÓN DE APARICIÓN INTELIGENTE
+                    if (Math.random() > 0.3) {
+                         const type = Math.random() > 0.5 ? 'ella' : 'yo';
+                         
+                         // Si pasamos la mitad de la carta, activar modo dual o tristeza
+                         if (SYSTEM.letterIdx > 14) {
+                             if(Math.random() > 0.4) {
+                                 wakeUpGhost('ella', 'bad');
+                                 wakeUpGhost('yo', 'bad');
+                             } else {
+                                 wakeUpGhost(type, 'bad');
+                             }
+                         } else {
+                             wakeUpGhost(type);
+                         }
+                    }
+                }
+            }
+
+            const camY = window.innerHeight/2 - SYSTEM.ball.y;
+            DOM.nodesDiv.style.transform = `translateY(${camY}px)`;
+            DOM.ball.style.transform = `translate(-50%, -50%) translateY(${camY}px)`;
+            document.querySelector('svg').style.transform = `translateY(${camY}px)`;
+
+            const last = SYSTEM.nodes[SYSTEM.nodes.length-1];
+            if (last.y + camY < window.innerHeight + 300) {
+                createNode(120 + Math.random()*100);
+            }
+            if (SYSTEM.nodes.length > 20) {
+                const oldNode = SYSTEM.nodes.shift();
+                if(oldNode.el.parentNode) oldNode.el.parentNode.removeChild(oldNode.el);
+                SYSTEM.currentIdx--;
+            }
+        }
+
+        updateNarrative();
+        updateAudioEffects();
+        
+        if (SYSTEM.running || SYSTEM.finaleMode) {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    /* ================= START ================= */
+    DOM.btn.addEventListener('click', async () => {
+        if (SYSTEM.gameInitialized) return;
+        SYSTEM.gameInitialized = true;
+        DOM.btn.style.pointerEvents = 'none';
+        DOM.btn.style.opacity = '0.5';
+        try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch(e){}
+        await initAudio();
+        const startScreen = document.getElementById('start-screen');
+        startScreen.style.opacity = '0';
+        startScreen.style.transition = 'opacity 1s';
+        setTimeout(() => startScreen.remove(), 1000);
+        
+        SYSTEM.running = true;
+        createNode(0);
+        for(let i=0; i<8; i++) createNode(180); 
+        gameLoop();
+    });
+</script>
+<script type="module">
+    import { registrarPaso } from './telemetry.js';
+    registrarPaso("Eco VII: Living Sprites");
+</script>
+</body>
+</html>
