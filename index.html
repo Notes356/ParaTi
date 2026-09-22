@@ -3,249 +3,329 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fragmentos de un Sueño</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-    
+    <title>Para Valii 💛</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* TUS ESTILOS ORIGINALES (INTACTOS) */
-        :root {
-            --c-sky-top: #3a7bd5; --c-sky-bottom: #fbb6ce; --c-panel-bg: #2a2a4a;
-            --c-panel-border: #4a4a7a; --c-accent: #ff6b81; --c-danger: #c0392b;
-            --c-text-light: #e0e0ff; --c-text-highlight: #ffd700; --c-shadow: rgba(0, 0, 0, 0.3);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        /* BLOQUEO TOTAL DE DESLIZAMIENTO */
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; 
+        }
+
         body {
-            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; font-family: 'VT323', monospace; color: var(--c-text-light);
-            user-select: none; background: linear-gradient(to bottom, var(--c-sky-top), var(--c-sky-bottom));
+            /* Patrón sutil de fondo */
+            background-color: #fffdf5;
+            background-image: radial-gradient(#e6d5a1 2px, transparent 2px);
+            background-size: 35px 35px;
+            font-family: 'Poppins', sans-serif;
+            color: #333;
             position: relative;
         }
-        .clouds {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.8) 10px, transparent 11px),
-                radial-gradient(circle at 25% 85%, rgba(255,255,255,0.8) 15px, transparent 16px),
-                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
-                radial-gradient(circle at 85% 25%, rgba(255,255,255,0.6) 15px, transparent 16px);
-            background-size: 300px 300px; animation: floatClouds 60s linear infinite;
+
+        /* -- FLORES SUELTAS DE FONDO (Estáticas) -- */
+        .bg-loose-flowers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1; /* Detrás del ramo y del texto */
         }
-        @keyframes floatClouds { from { background-position: 0 0; } to { background-position: 300px 100px; } }
-        .mountains {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 40%; pointer-events: none; z-index: -1;
-            background-image: linear-gradient(to bottom, #2a2a4a 0%, #1a1a2a 100%);
-            clip-path: polygon(0% 100%, 0% 20%, 20% 40%, 40% 0%, 60% 30%, 80% 10%, 100% 50%, 100% 100%);
+
+        .bg-loose-flowers span {
+            position: absolute;
+            opacity: 0.6; /* Un poco transparentes para que sean fondo */
+            user-select: none;
         }
-        .pixel-card {
-            background: var(--c-panel-bg); border: 4px solid var(--c-panel-border); padding: 2.5rem;
-            width: 90%; max-width: 380px; text-align: center; position: relative;
-            box-shadow: 0 8px 16px var(--c-shadow); border-radius: 8px;
+
+        /* Posiciones de las flores sueltas */
+        .f1 { top: 12%; left: 8%; font-size: 2.5rem; }
+        .f2 { top: 15%; right: 12%; font-size: 2rem; transform: rotate(15deg); }
+        .f3 { top: 45%; left: 5%; font-size: 1.8rem; transform: rotate(-10deg); }
+        .f4 { top: 40%; right: 8%; font-size: 2.8rem; transform: rotate(10deg); }
+        .f5 { bottom: 15%; left: 12%; font-size: 2.2rem; transform: rotate(-15deg); }
+        .f6 { bottom: 20%; right: 15%; font-size: 2rem; }
+        .f7 { top: 5%; left: 50%; font-size: 1.5rem; transform: translateX(-50%); }
+        .f8 { bottom: 8%; left: 50%; font-size: 1.8rem; transform: translateX(-50%); }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .pixel-card::after {
-            content: ''; position: absolute; top: 4px; left: 4px; right: 4px; bottom: 4px;
-            border: 2px dashed var(--c-panel-border); pointer-events: none;
+
+        /* -- BOTÓN DEL RAMO PRINCIPAL -- */
+        .flower-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            position: absolute;
+            
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            
+            z-index: 10; 
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .icon-heart {
-            font-size: 50px; color: var(--c-accent); text-shadow: 0 4px 8px var(--c-shadow);
-            margin-bottom: 15px; display: inline-block; animation: beat 3s infinite ease-in-out;
+
+        .flower-btn:not(.active) {
+            animation: breathe 2.5s ease-in-out infinite;
         }
-        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-        h1 { font-family: 'Press Start 2P', cursive; font-size: 18px; line-height: 1.6; margin-bottom: 1.5rem; color: #fff; text-shadow: 0 2px 4px var(--c-shadow); }
-        p { font-size: 1.4rem; line-height: 1.4; margin-bottom: 2rem; color: #d0d0f0; }
-        .pixel-input {
-            background: #1a1a2a; border: 3px solid var(--c-panel-border); color: var(--c-accent);
-            font-family: 'Press Start 2P', cursive; font-size: 14px; padding: 15px; width: 70%;
-            text-align: center; outline: none; margin-bottom: 25px; text-transform: uppercase; border-radius: 4px;
+
+        .flower-btn.active {
+            top: 8%; 
+            transform: translate(-50%, 0) scale(0.45); 
+            opacity: 0.75; 
         }
-        .pixel-input:focus { border-color: var(--c-accent); box-shadow: 0 0 10px var(--c-accent); }
-        .pixel-btn {
-            background: var(--c-accent); color: #fff; border: none; font-family: 'Press Start 2P', cursive;
-            font-size: 12px; padding: 15px 30px; cursor: pointer; box-shadow: 0 6px #c74b5e, 0 10px 20px var(--c-shadow);
-            border-radius: 4px; transition: all 0.1s; text-shadow: 0 2px #c74b5e;
+
+        /* -- TARJETA DE TEXTO -- */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 35px 25px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(212, 172, 13, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            
+            position: absolute;
+            top: 55%; 
+            left: 50%;
+            
+            width: 90%;
+            max-width: 450px;
+            max-height: 75vh; 
+            overflow-y: auto;
+            
+            z-index: 20; 
+            
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, 20px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
         }
-        .pixel-btn:active { transform: translateY(4px); box-shadow: 0 2px #c74b5e, 0 4px 10px var(--c-shadow); }
-        .btn-small { padding: 10px 15px; font-size: 10px; margin-top: 15px; background: var(--c-panel-border); box-shadow: 0 4px #3a3a5a; }
-        .btn-danger { background: var(--c-danger); box-shadow: 0 4px #922b21; margin-top: 10px; }
-        .hidden { display: none !important; }
-        .error-msg { color: var(--c-accent); margin-top: 20px; font-size: 16px; font-weight: bold; min-height: 24px; }
-        
-        #admin-panel {
-            display: none; position: absolute; z-index: 50; background: var(--c-panel-bg); border: 4px solid var(--c-accent);
-            top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 30px; width: 320px; border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+        .card.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%);
         }
-        .admin-trigger { position: fixed; bottom: 15px; right: 15px; opacity: 0.5; cursor: pointer; font-size: 24px; color: var(--c-text-light); transition: opacity 0.3s; }
-        .admin-trigger:hover { opacity: 1; }
-        .key-list { text-align: left; font-size: 14px; max-height: 200px; overflow-y: auto; margin: 20px 0; border: 2px dashed var(--c-panel-border); padding: 10px; background: #1a1a2a; border-radius: 4px;}
-        
-        /* Nuevo estilo para los datos de conexión */
-        .key-item { margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .key-meta { display: block; font-size: 12px; color: #aaa; margin-top: 2px; }
+
+        p {
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #4a4a4a;
+            margin-bottom: 15px;
+        }
+
+        .te-amo {
+            font-weight: 600;
+            color: #d4ac0d;
+            font-size: 1.15rem;
+            margin-top: 25px;
+            margin-bottom: 0;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.03); }
+        }
     </style>
 </head>
 <body>
 
-    <div class="clouds"></div>
-    <div class="mountains"></div>
-
-    <main class="pixel-card animate__animated animate__fadeIn" id="view-login">
-        <div class="icon-heart">❤</div>
-        <h1>FRAGMENTOS<br>DE UN SUEÑO</h1>
-        <p>Una llave, una historia.<br>Introduce tu código.</p>
-        
-        <input type="text" id="user-key-input" class="pixel-input" placeholder="XXXX" maxlength="10">
-        <br>
-        <button class="pixel-btn" id="btn-enter">ABRIR PORTAL</button>
-        
-        <div id="login-msg" class="error-msg"></div>
-    </main>
-
-    <div class="admin-trigger" id="btn-open-admin">⚙</div>
-
-    <div id="admin-panel">
-        <h2 style="font-family:'Press Start 2P'; font-size:14px; color:var(--c-accent); margin-bottom:25px; text-align:center;">PANEL DEL CREADOR</h2>
-        
-        <div id="admin-auth-view" style="text-align: center;">
-            <input type="password" id="admin-pass-input" class="pixel-input" placeholder="CLAVE MAESTRA" style="width: 80%;">
-            <br>
-            <button class="pixel-btn" id="btn-admin-login">ACCEDER</button>
-        </div>
-
-        <div id="admin-tools-view" class="hidden" style="text-align: center;">
-            <button class="pixel-btn" id="btn-generate" style="width: 100%;">GENERAR LLAVE MÁGICA</button>
-            
-            <div id="keys-display" class="key-list">Conectando con el oráculo...</div>
-            
-            <button class="pixel-btn btn-small btn-danger" id="btn-clear-history">BORRAR HISTORIAL</button>
-            <br>
-            <button class="pixel-btn btn-small" id="btn-close-admin" style="margin-top: 10px;">CERRAR PANEL</button>
-        </div>
+    <!-- FLORES SUELTAS ESTÁTICAS DE FONDO -->
+    <div class="bg-loose-flowers">
+        <span class="f1">🌻</span>
+        <span class="f2">🌼</span>
+        <span class="f3">🌼</span>
+        <span class="f4">🌻</span>
+        <span class="f5">🌻</span>
+        <span class="f6">🌼</span>
+        <span class="f7">🌼</span>
+        <span class="f8">🌻</span>
     </div>
 
-    <script type="module">
-        import { db, ref, set, update, get, onValue, remove } from './firebase-config.js';
-        import { registrarPaso } from './telemetry.js';
+    <div class="container">
+        
+        <!-- RAMO PRINCIPAL ABUNDANTE -->
+        <button class="flower-btn" id="flowerBtn" onclick="revealMessage()">
+            <svg viewBox="0 0 400 400" width="320" height="320">
+                <defs>
+                    <!-- Plantilla para el pétalo del girasol realista -->
+                    <path id="sun-petal" d="M0,-25 Q-16,-65 0,-100 Q16,-65 0,-25" />
+                </defs>
 
-        const ADMIN_PASSWORD = "AMOR_FRIO";
+                <!-- TALLOS -->
+                <path d="M200,200 Q200,300 200,380" stroke="#558b2f" stroke-width="10" fill="none"/>
+                <path d="M120,130 Q160,260 200,380" stroke="#7cb342" stroke-width="8" fill="none"/>
+                <path d="M280,130 Q240,260 200,380" stroke="#689f38" stroke-width="8" fill="none"/>
+                <path d="M90,200 Q140,280 200,380" stroke="#7cb342" stroke-width="8" fill="none"/>
+                <path d="M310,200 Q260,280 200,380" stroke="#689f38" stroke-width="8" fill="none"/>
 
-        // Elementos UI
-        const viewLogin = document.getElementById('view-login');
-        const loginMsg = document.getElementById('login-msg');
-        const adminPanel = document.getElementById('admin-panel');
-        const adminAuthView = document.getElementById('admin-auth-view');
-        const adminToolsView = document.getElementById('admin-tools-view');
-        const keysDisplay = document.getElementById('keys-display');
+                <!-- HOJAS -->
+                <path d="M200,320 Q140,280 130,230 Q180,240 200,320" fill="#7cb342"/>
+                <path d="M200,330 Q270,290 280,240 Q230,250 200,330" fill="#689f38"/>
+                <path d="M180,360 Q100,330 90,280 Q150,290 180,360" fill="#558b2f"/>
+                <path d="M220,350 Q300,320 310,270 Q250,280 220,350" fill="#7cb342"/>
+                <path d="M190,260 Q130,220 120,180 Q170,190 190,260" fill="#689f38"/>
+                <path d="M210,260 Q270,220 280,180 Q230,190 210,260" fill="#558b2f"/>
 
-        // =========================================
-        // 1. LÓGICA DE ENTRADA (USUARIO)
-        // =========================================
-        window.enterSystem = async () => {
-            const keyInput = document.getElementById('user-key-input').value.trim().toUpperCase();
+                <!-- Tulipán Izquierdo -->
+                <g transform="translate(130, 110) rotate(-25) scale(0.9)">
+                    <path d="M-18,25 C-35,-25 35,-25 18,25 Z" fill="#FFC107"/>
+                    <path d="M-18,25 Q-20,-5 0,-25 Q20,-5 18,25 Z" fill="#FFD54F"/>
+                    <path d="M-6,25 Q-12,5 0,-15 Q12,5 6,25 Z" fill="#FFA000"/>
+                </g>
+
+                <!-- Tulipán Derecho -->
+                <g transform="translate(270, 110) rotate(25) scale(0.9)">
+                    <path d="M-18,25 C-35,-25 35,-25 18,25 Z" fill="#FFC107"/>
+                    <path d="M-18,25 Q-20,-5 0,-25 Q20,-5 18,25 Z" fill="#FFD54F"/>
+                    <path d="M-6,25 Q-12,5 0,-15 Q12,5 6,25 Z" fill="#FFA000"/>
+                </g>
+
+                <!-- Margarita Centro Superior -->
+                <g transform="translate(200, 90) scale(0.9)">
+                    <g fill="#FFF59D">
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(0)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(45)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(90)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(135)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(180)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(225)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(270)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(315)"/>
+                    </g>
+                    <circle cx="0" cy="0" r="14" fill="#F57F17"/>
+                </g>
+
+                <!-- Margarita Izquierda -->
+                <g transform="translate(90, 200) rotate(-40) scale(0.85)">
+                    <g fill="#FFF59D">
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(0)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(45)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(90)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(135)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(180)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(225)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(270)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(315)"/>
+                    </g>
+                    <circle cx="0" cy="0" r="14" fill="#F57F17"/>
+                </g>
+
+                <!-- Margarita Derecha -->
+                <g transform="translate(310, 200) rotate(40) scale(0.85)">
+                    <g fill="#FFF59D">
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(0)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(45)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(90)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(135)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(180)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(225)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(270)"/>
+                        <ellipse cx="0" cy="-28" rx="8" ry="28" transform="rotate(315)"/>
+                    </g>
+                    <circle cx="0" cy="0" r="14" fill="#F57F17"/>
+                </g>
+
+                <!-- NUEVO GIRASOL GIGANTE Y REALISTA -->
+                <g transform="translate(200, 230) scale(1.15)">
+                    
+                    <!-- Capa Trasera de Pétalos (Color Mostaza/Oscuro) -->
+                    <g fill="#FFB300">
+                        <use href="#sun-petal" transform="rotate(0)"/>
+                        <use href="#sun-petal" transform="rotate(20)"/>
+                        <use href="#sun-petal" transform="rotate(40)"/>
+                        <use href="#sun-petal" transform="rotate(60)"/>
+                        <use href="#sun-petal" transform="rotate(80)"/>
+                        <use href="#sun-petal" transform="rotate(100)"/>
+                        <use href="#sun-petal" transform="rotate(120)"/>
+                        <use href="#sun-petal" transform="rotate(140)"/>
+                        <use href="#sun-petal" transform="rotate(160)"/>
+                        <use href="#sun-petal" transform="rotate(180)"/>
+                        <use href="#sun-petal" transform="rotate(200)"/>
+                        <use href="#sun-petal" transform="rotate(220)"/>
+                        <use href="#sun-petal" transform="rotate(240)"/>
+                        <use href="#sun-petal" transform="rotate(260)"/>
+                        <use href="#sun-petal" transform="rotate(280)"/>
+                        <use href="#sun-petal" transform="rotate(300)"/>
+                        <use href="#sun-petal" transform="rotate(320)"/>
+                        <use href="#sun-petal" transform="rotate(340)"/>
+                    </g>
+                    
+                    <!-- Capa Delantera de Pétalos (Color Amarillo Brillante) -->
+                    <g fill="#FFC107">
+                        <use href="#sun-petal" transform="rotate(10) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(30) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(50) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(70) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(90) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(110) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(130) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(150) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(170) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(190) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(210) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(230) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(250) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(270) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(290) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(310) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(330) scale(0.95)"/>
+                        <use href="#sun-petal" transform="rotate(350) scale(0.95)"/>
+                    </g>
+                    
+                    <!-- Centro Texturizado y Detallado -->
+                    <circle cx="0" cy="0" r="34" fill="#4E342E"/>
+                    <!-- Anillo exterior de semillas -->
+                    <circle cx="0" cy="0" r="30" stroke="#FF8F00" stroke-width="2" stroke-dasharray="2 4" fill="none"/>
+                    <!-- Fondo central -->
+                    <circle cx="0" cy="0" r="26" fill="#3E2723"/>
+                    <!-- Anillo interior de semillas -->
+                    <circle cx="0" cy="0" r="22" stroke="#FFC107" stroke-width="1.5" stroke-dasharray="1 4" fill="none"/>
+                    <!-- Corazón del girasol -->
+                    <circle cx="0" cy="0" r="16" fill="#261612"/>
+                    <circle cx="0" cy="0" r="8" fill="#1A0F0D"/>
+                </g>
+            </svg>
+        </button>
+
+        <!-- TARJETA DE TEXTO -->
+        <div class="card" id="messageCard">
+            <p>Valii hoy talvez sea un dia especial.<br>
+            Para recomenzar, para seguir, y quién sabe qué podría venir.</p>
+            <p>Y amorcito, gracias por quererme a pesar del drama.<br>
+            Eres mi persona favorita, la Niña mas hermosa.</p>
+            <p>Y quiero ser tu compañero y poder apreciarte por mucho tiempo, por siempre sería mejor.</p>
+            <p>Ten un lindo día</p>
             
-            if (!keyInput) { 
-                loginMsg.textContent = "Por favor, escribe una llave."; 
-                return; 
-            }
+            <p class="te-amo">Te amoo Valii 🩷</p>
+        </div>
 
-            loginMsg.textContent = "Verificando...";
-            loginMsg.style.color = "var(--c-text-light)";
+    </div>
 
-            const keyRef = ref(db, 'llaves/' + keyInput);
+    <script>
+        function revealMessage() {
+            const card = document.getElementById('messageCard');
+            const btn = document.getElementById('flowerBtn');
             
-            try {
-                const snapshot = await get(keyRef);
-                const data = snapshot.val();
-                
-                // Si la llave existe y está activa (o usada, permitimos reentrada por ser dedicatoria)
-                if (data && (data.estado === "activa" || data.estado === "usada")) {
-                    
-                    // 1. Guardar la llave en el navegador para las siguientes fases
-                    localStorage.setItem('llave_acceso_dedicatoria', keyInput);
-                    
-                    // 2. Registrar en base de datos
-                    registrarPaso("Inicio: Portal Abierto"); // Esto guarda hora y fase
-
-                    // 3. Actualizar estado a usada si era nueva
-                    if(data.estado === "activa") {
-                        update(keyRef, { estado: "usada" });
-                    }
-                    
-                    loginMsg.style.color = "var(--c-text-highlight)";
-                    loginMsg.textContent = "¡Bienvenid@! El sueño comienza...";
-                    
-                    setTimeout(() => {
-                        window.location.href = 'fase2.html';
-                    }, 1500);
-
-                } else {
-                    loginMsg.style.color = "var(--c-accent)";
-                    loginMsg.textContent = "Llave incorrecta o inexistente.";
-                }
-
-            } catch (error) { 
-                console.error(error);
-                loginMsg.textContent = "Error de conexión con el sueño."; 
-            }
-        };
-
-        document.getElementById('btn-enter').addEventListener('click', window.enterSystem);
-
-        // =========================================
-        // 2. LÓGICA DE ADMIN (CREADOR)
-        // =========================================
-        document.getElementById('btn-open-admin').addEventListener('click', () => { adminPanel.style.display = 'block'; });
-        document.getElementById('btn-close-admin').addEventListener('click', () => { adminPanel.style.display = 'none'; });
-
-        document.getElementById('btn-admin-login').addEventListener('click', () => {
-            if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD) {
-                adminAuthView.classList.add('hidden');
-                adminToolsView.classList.remove('hidden');
-                startKeysListener();
-            } else { 
-                alert("Contraseña incorrecta."); 
-            }
-        });
-
-        document.getElementById('btn-generate').addEventListener('click', () => {
-            const newKey = Math.random().toString(36).substring(2, 6).toUpperCase();
-            set(ref(db, 'llaves/' + newKey), { 
-                estado: "activa", 
-                creada: new Date().toLocaleDateString(),
-                ultima_ubicacion: "Esperando..." 
-            });
-        });
-
-        document.getElementById('btn-clear-history').addEventListener('click', () => {
-            if(confirm("⚠ ¿Borrar TODO el historial de llaves?")) {
-                remove(ref(db, 'llaves'));
-            }
-        });
-
-        // =========================================
-        // 3. MONITOR EN TIEMPO REAL
-        // =========================================
-        function startKeysListener() {
-            onValue(ref(db, 'llaves'), (snapshot) => {
-                const data = snapshot.val();
-                keysDisplay.innerHTML = "";
-                
-                if (!data) { keysDisplay.innerHTML = "Sin registros."; return; }
-                
-                Object.keys(data).forEach(key => {
-                    const info = data[key];
-                    const icon = info.estado === 'activa' ? '✨' : '❤️';
-                    const color = info.estado === 'activa' ? '#ffd700' : '#ff6b81';
-                    
-                    // Aquí mostramos DÓNDE está y CUÁNDO fue
-                    keysDisplay.innerHTML += `
-                    <div class="key-item" style="color:${color}">
-                        ${icon} <b>${key}</b> [${info.estado}]
-                        <span class="key-meta">
-                            📍 ${info.ultima_ubicacion || 'Inicio'} <br>
-                            🕒 ${info.ultima_conexion || '---'}
-                        </span>
-                    </div>`;
-                });
-            });
+            card.classList.add('show');
+            btn.classList.add('active');
         }
     </script>
 </body>
